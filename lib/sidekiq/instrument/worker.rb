@@ -1,4 +1,5 @@
 require 'sidekiq'
+require 'sidekiq/api'
 
 module Sidekiq::Instrument
   class Worker

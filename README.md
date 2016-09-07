@@ -1,4 +1,6 @@
 # Sidekiq::Instrument
+[![Build Status](https://travis-ci.org/enova/sidekiq-instrument.svg?branch=master)](https://travis-ci.org/enova/sidekiq-instrument)
+[![Coverage Status](https://coveralls.io/repos/github/enova/sidekiq-instrument/badge.svg?branch=master)](https://coveralls.io/github/enova/sidekiq-instrument?branch=master)
 
 Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] library, incrementing a counter for each enqueue and dequeue per job type, and timing the full runtime of your perform method.
 

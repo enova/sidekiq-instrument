@@ -11,3 +11,9 @@ require 'sidekiq/instrument'
 RSpec.configure do |config|
   config.include StatsD::Instrument::Matchers
 end
+
+class MyWorker
+  include Sidekiq::Worker
+
+  def perform; end
+end

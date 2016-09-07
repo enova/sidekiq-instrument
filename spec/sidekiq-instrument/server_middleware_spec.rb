@@ -1,25 +1,19 @@
 require 'sidekiq/instrument/middleware/server'
 
 RSpec.describe Sidekiq::Instrument::ServerMiddleware do
-  before do
-    Sidekiq::Testing.server_middleware do |chain|
-      chain.add described_class
-    end
-  end
-
-  after(:all) do
-    Sidekiq::Testing.server_middleware do |chain|
-      chain.remove described_class
-    end
-  end
-
-  class MyWorker
-    include Sidekiq::Worker
-
-    def perform; end
-  end
-
   describe '#call' do
+    before(:all) do
+      Sidekiq::Testing.server_middleware do |chain|
+        chain.add described_class
+      end
+    end
+
+    after(:all) do
+      Sidekiq::Testing.server_middleware do |chain|
+        chain.remove described_class
+      end
+    end
+
     it 'increments dequeue counter' do
       expect {
         MyWorker.perform_async

@@ -1,3 +1,5 @@
+require 'sidekiq/instrument/mixin'
+
 module Sidekiq::Instrument
   class ServerMiddleware
     include Sidekiq::Instrument::MetricNames

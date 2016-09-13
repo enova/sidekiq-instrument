@@ -18,5 +18,18 @@ RSpec.describe Sidekiq::Instrument::Worker do
       expect { worker.perform }.to trigger_statsd_gauge('shared.sidekiq.stats.enqueued')
       expect { worker.perform }.to trigger_statsd_gauge('shared.sidekiq.stats.working')
     end
+
+    context 'when jobs in queues' do
+      before do
+        Sidekiq::Testing.disable! do
+          Sidekiq::Queue.all.each(&:clear)
+          MyWorker.perform_async
+        end
+      end
+
+      it 'gauges the size of the queues' do
+        expect { worker.perform }.to trigger_statsd_gauge('shared.sidekiq.default.size')
+      end
+    end
   end
 end

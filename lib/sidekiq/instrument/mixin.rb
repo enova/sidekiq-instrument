@@ -5,7 +5,7 @@ module Sidekiq::Instrument
         worker.send(:statsd_metric_name, event)
       else
         queue = worker.sidekiq_options_hash['queue']
-        name = worker.class.name
+        name = worker.class.name.gsub('::', '_')
 
         "shared.sidekiq.#{queue}.#{name}.#{event}"
       end

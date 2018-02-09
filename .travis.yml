@@ -7,3 +7,12 @@ services:
   - redis-server
 
 before_install: gem install bundler -v 1.12.1
+
+deploy:
+  provider: rubygems
+  api_key:
+    secure: T0S2ipyvGkY2qL6oxcgZgBl+krGR3qFlL4vNyzy+rvaZAV8YNijQiM7YyggTLhnKai3SxuHjzN1ZiT7vzlklJn9k2qRhU1uVq4xW+YX6yVNBBbugJGqNuyw3p2BUOga83ES2jA/Kby9mLAJEebS5LmupapSCeElsmhYzXIlV9SYH1mZV4CHQ06Luv3r1DQ8z1cwrB+5N+Y9TNV1wXa/LbuxJPl6jgxN0oJ+RFU7lTHtovMwyL+wRXLiRpZc2k6dH0IUo03QxYVCUDIvShdX26WfzF+fpSPRgOHnbJeaBTbeuxntFzEDy6Td2hpRQWP31i+/8BzPWGCLqUfS55uQqFM06UI/vnZnbe8NlI57gzw6yJHPsFoyg8Cw/3TABhw+SEOoMyBdued4RGKF6EgYsx3hW+KUhEvncnBg6F7jRdZgtHmk6s8iU+/d39pgQh4AiCJQOhINErAnnH2P5hM3TDoZYQlkUjw0FQ0F8bTmRKJq4JhMyvtwMutvMuSIN+8q7utNTxzFquvYcmAcNYafsmuC7Qtvpqi0iVzQ3f3c+SCljcvEnUEf66+xufkn79eSAYcCrL/FdZOdBEiXpaY2wdtJO7Kr66BMhzGCjlO8YQoDw0pgsES9Uy5H1JtfphjWzHWYdiYDBoofFURE1jO/pJ9V9dp9ezzOcvW4faZhL8ho=
+  gem: sidekiq-instrument
+  on:
+    tags: true
+    repo: enova/sidekiq-instrument

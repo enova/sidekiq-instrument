@@ -18,10 +18,20 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
       end
     end
 
-    it 'increments the enqueue counter' do
-      expect {
-        MyWorker.perform_async
-      }.to trigger_statsd_increment('shared.sidekiq.default.MyWorker.enqueue')
+    context 'without statsd_metric_name' do
+      it 'increments the enqueue counter' do
+        expect {
+          MyWorker.perform_async
+        }.to trigger_statsd_increment('shared.sidekiq.default.MyWorker.enqueue')
+      end
+    end
+
+    context 'with statsd_metric_name' do
+      it 'increments the enqueue counter' do
+        expect {
+          MyOtherWorker.perform_async
+        }.to trigger_statsd_increment('my_other_worker.enqueue')
+      end
     end
   end
 end

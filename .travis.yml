@@ -1,12 +1,14 @@
 sudo: false
 language: ruby
 rvm:
-  - 2.3.0
+  - 2.5.8
+  - 2.6.6
+  - 2.7.2
 
 services:
   - redis-server
 
-before_install: gem install bundler -v 1.12.1
+before_install: gem install bundler -v 2.0.2
 
 deploy:
   provider: rubygems

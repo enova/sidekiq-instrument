@@ -5,7 +5,8 @@ module Sidekiq::Instrument
     include Sidekiq::Instrument::MetricNames
 
     def call(worker_class, job, queue, redis_pool)
-      klass = Object.const_get(worker_class)
+      # worker_class is a const in sidekiq >= 6.x
+      klass = Object.const_get(worker_class.to_s)
       StatsD.increment metric_name(klass.new, 'enqueue')
 
       yield

@@ -17,3 +17,13 @@ class MyWorker
 
   def perform; end
 end
+
+class MyOtherWorker
+  include Sidekiq::Worker
+
+  def perform; end
+
+  def statsd_metric_name(event)
+    "my_other_worker.#{event}"
+  end
+end

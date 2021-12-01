@@ -30,6 +30,10 @@ RSpec.describe Sidekiq::Instrument::Worker do
       it 'gauges the size of the queues' do
         expect { worker.perform }.to trigger_statsd_gauge('shared.sidekiq.default.size')
       end
+
+      it 'gauges the latency of the queues' do
+        expect { worker.perform }.to trigger_statsd_gauge('shared.sidekiq.default.latency')
+      end
     end
   end
 end

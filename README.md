@@ -70,6 +70,10 @@ For each job, the following metrics will be reported:
 The metric names can be changed by overriding the `statsd_metric_name`
 method in your worker classes.
 
+For each queue, the following metrics will be reported:
+1. **shared.sidekiq._queue_.size**: gauge of how many jobs are in the queue
+1. **shared.sidekiq._queue_.latency**: gauge of how long the oldest job has been in the queue
+
 ## Worker
 There is a worker, `Sidekiq::Instrument::Worker`, that submits gauges
 for various interesting statistics; namely, the bulk of the information in `Sidekiq::Stats`

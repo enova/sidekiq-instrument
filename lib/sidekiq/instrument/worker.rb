@@ -30,6 +30,10 @@ module Sidekiq::Instrument
       info.queues.each do |name, size|
         StatsD.gauge "shared.sidekiq.#{name}.size", size
       end
+
+      Sidekiq::Queue.all.each do |queue|
+        StatsD.gauge "shared.sidekiq.#{queue.name}.latency", queue.latency
+      end
     end
   end
 end

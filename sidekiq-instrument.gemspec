@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'sidekiq', '>= 4.2', '< 7'
-  spec.add_dependency 'statsd-instrument', '~> 2.0', '>= 2.0.4'
+  spec.add_dependency 'statsd-instrument', '>= 2.0.4'
 
   spec.add_development_dependency 'bundler', '~> 2.0', '>= 2.0.2'
   spec.add_development_dependency 'rake', '~> 12.0'

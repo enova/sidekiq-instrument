@@ -11,7 +11,7 @@ Add this line to your application's Gemfile:
 ```ruby
 gem 'sidekiq-instrument'
 ```
-
+ddd
 And then execute:
 
     $ bundle

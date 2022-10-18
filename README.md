@@ -1,8 +1,6 @@
 # Sidekiq::Instrument
-[![Build Status](https://travis-ci.org/enova/sidekiq-instrument.svg?branch=master)](https://travis-ci.org/enova/sidekiq-instrument)
-[![Coverage Status](https://coveralls.io/repos/github/enova/sidekiq-instrument/badge.svg?branch=master)](https://coveralls.io/github/enova/sidekiq-instrument?branch=master)
 
-Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] library, incrementing a counter for each enqueue and dequeue per job type, and timing the full runtime of your perform method.
+Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] library and DataDog's [dogstatsd-ruby](https://github.com/DataDog/dogstatsd-ruby), incrementing a counter for each enqueue and dequeue per job type, and timing the full runtime of your perform method.
 
 ## Installation
 
@@ -10,27 +8,39 @@ Add this line to your application's Gemfile:
 
 ```ruby
 gem 'sidekiq-instrument'
+gem 'dogstatsd-ruby'
 ```
 
 And then execute:
 
     $ bundle
 
-Or install it yourself as:
+Or install them yourself as:
 
     $ gem install sidekiq-instrument
+    $ gem install dogstatsd-ruby
 
 ## Usage
 
-For now, this library assumes you have already initialized `StatsD` on your own;
+For now, this library assumes you have already initialized `StatsD` and `DogStatsD` on your own;
 the `statsd-instrument` gem may have chosen reasonable defaults for you already. If not,
 a typical Rails app would just use an initializer:
+
+### StatsD
 
 ```ruby
 # config/initializers/statsd.rb
 require 'statsd-instrument'
 StatsD.prefix  = 'my-app'
 StatsD.backend = StatsD::Instrument::Backends::UDPBackend.new('some-server:8125')
+```
+
+### DogStatsD
+
+```ruby
+# config/initializers/dogstatsd.rb
+require 'datadog/statsd'
+DogStatsD = Datadog::Statsd.new('localhost', 8125)
 ```
 
 Then add the client and server middlewares in your Sidekiq initializer:
@@ -55,7 +65,7 @@ Sidekiq.configure_client do |config|
 end
 ```
 
-## StatsD Keys
+## StatsD/DogStatsD Keys
 For each job, the following metrics will be reported:
 
 1. **shared.sidekiq._queue_._job_.enqueue**: counter incremented each time a

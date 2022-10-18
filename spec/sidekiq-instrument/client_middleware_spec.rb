@@ -33,5 +33,12 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
         }.to trigger_statsd_increment('my_other_worker.enqueue')
       end
     end
+
+    context 'dogstatsD' do
+      it 'increments the enqueue counter' do
+        expect(DogStatsD).to receive(:increment).with('shared.sidekiq.default.MyWorker.enqueue', tags: ['sidekiq']).once
+        MyWorker.perform_async
+      end
+    end
   end
 end

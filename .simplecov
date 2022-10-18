@@ -1,8 +1,11 @@
-require 'coveralls'
+require 'simplecov'
+require 'simplecov-cobertura'
 
 SimpleCov.formatters = [
   SimpleCov::Formatter::HTMLFormatter,
-  Coveralls::SimpleCov::Formatter
+  SimpleCov::Formatter::CoberturaFormatter
 ]
 
-SimpleCov.start
+SimpleCov.start do
+  add_filter "/spec/"
+end

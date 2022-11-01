@@ -4,11 +4,22 @@ module Sidekiq::Instrument
       if worker.respond_to?(:statsd_metric_name)
         worker.send(:statsd_metric_name, event)
       else
-        queue = worker.class.get_sidekiq_options['queue']
-        name = worker.class.name.gsub('::', '_')
-
-        "shared.sidekiq.#{queue}.#{name}.#{event}"
+        "shared.sidekiq.#{queue_name(worker)}.#{class_name(worker)}.#{event}"
       end
+    end
+
+    def worker_dog_options(worker)
+      { tags: ["queue:#{queue_name(worker)}", "worker:#{class_name(worker)}"] }
+    end
+
+    private
+
+    def queue_name(worker)
+      worker.class.get_sidekiq_options['queue']
+    end
+
+    def class_name(worker)
+      worker.class.name.gsub('::', '_')
     end
   end
 end

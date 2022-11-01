@@ -19,6 +19,28 @@ RSpec.describe Sidekiq::Instrument::Worker do
       expect { worker.perform }.to trigger_statsd_gauge('shared.sidekiq.stats.working')
     end
 
+    context 'with DogStatsD client' do
+      it 'sends the appropriate metrics via DogStatsD' do
+        expect(Sidekiq::Instrument::Statter.dogstatsd).to receive(:gauge).exactly(7).times
+        worker.perform
+      end
+    end
+
+    context 'without optional DogStatsD client' do
+      before do
+        @tmp = Sidekiq::Instrument::Statter.dogstatsd
+        Sidekiq::Instrument::Statter.dogstatsd = nil
+      end
+
+      after do
+        Sidekiq::Instrument::Statter.dogstatsd = @tmp
+      end
+
+      it 'does not error' do
+        expect { MyWorker.perform_async }.not_to raise_error
+      end
+    end
+
     context 'when jobs in queues' do
       before do
         Sidekiq::Testing.disable! do

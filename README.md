@@ -1,30 +1,35 @@
 # Sidekiq::Instrument
-[![Build Status](https://travis-ci.org/enova/sidekiq-instrument.svg?branch=master)](https://travis-ci.org/enova/sidekiq-instrument)
-[![Coverage Status](https://coveralls.io/repos/github/enova/sidekiq-instrument/badge.svg?branch=master)](https://coveralls.io/github/enova/sidekiq-instrument?branch=master)
 
-Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] library, incrementing a counter for each enqueue and dequeue per job type, and timing the full runtime of your perform method.
+> TODO: Integrate GitHub Actions with this repo, as TravisCI support has been deprecated.
+
+Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] library and \[optionally\] DataDog's [dogstatsd-ruby](https://github.com/DataDog/dogstatsd-ruby), incrementing a counter for each enqueue and dequeue per job type, and timing the full runtime of your perform method.
 
 ## Installation
 
-Add this line to your application's Gemfile:
+Add the following to your application's Gemfile:
 
 ```ruby
 gem 'sidekiq-instrument'
+gem 'dogstatsd-ruby' # optional
 ```
 
 And then execute:
 
     $ bundle
 
-Or install it yourself as:
+Or install the gem(s) yourself as:
 
     $ gem install sidekiq-instrument
+    $ gem install dogstatsd-ruby # again, optional
 
 ## Usage
 
 For now, this library assumes you have already initialized `StatsD` on your own;
 the `statsd-instrument` gem may have chosen reasonable defaults for you already. If not,
-a typical Rails app would just use an initializer:
+a typical Rails app would just use an initializer and set the `StatsD` and optional `DogStatsD`
+clients via this gem's `Statter` class:
+
+### StatsD
 
 ```ruby
 # config/initializers/statsd.rb
@@ -33,10 +38,21 @@ StatsD.prefix  = 'my-app'
 StatsD.backend = StatsD::Instrument::Backends::UDPBackend.new('some-server:8125')
 ```
 
+### DogStatsD
+
+```ruby
+# config/initializers/dogstatsd.rb
+require 'datadog/statsd'
+DogStatsD = Datadog::Statsd.new('localhost', 8125, tags: {app_name: 'my_app', env: 'production'})
+```
+
 Then add the client and server middlewares in your Sidekiq initializer:
 
 ```ruby
 require 'sidekiq/instrument'
+
+Sidekiq::Instrument::Statter.statsd = StatsD # optional, Statter will fall back to a global StatsD
+Sidekiq::Instrument::Statter.dogstatsd = DogStatsD # optional, dogstatsd can be nil if not desired
 
 Sidekiq.configure_server do |config|
   config.server_middleware do |chain|
@@ -73,6 +89,22 @@ method in your worker classes.
 For each queue, the following metrics will be reported:
 1. **shared.sidekiq._queue_.size**: gauge of how many jobs are in the queue
 1. **shared.sidekiq._queue_.latency**: gauge of how long the oldest job has been in the queue
+
+## DogStatsD Keys
+For each job, the following metrics and tags will be reported:
+
+1. **sidekiq.enqueue (tags: {queue: _queue_, worker: _job_})**: counter incremented each time a
+   job is pushed onto the queue.
+2. **sidekiq.dequeue (tags: {queue: _queue_, worker: _job_})**: counter incremented just before
+   worker begins performing a job.
+3. **sidekiq.runtime (tags: {queue: _queue_, worker: _job_})**: timer of the total time spent
+   in `perform`, in milliseconds.
+3. **sidekiq.error (tags: {queue: _queue_, worker: _job_})**: counter incremented each time a
+   job fails.
+
+For each queue, the following metrics and tags will be reported:
+1. **sidekiq.queue_size (tags: {queue: _queue_})**: gauge of how many jobs are in the queue
+1. **sidekiq.queue_latency (tags: {queue: _queue_})**: gauge of how long the oldest job has been in the queue
 
 ## Worker
 There is a worker, `Sidekiq::Instrument::Worker`, that submits gauges

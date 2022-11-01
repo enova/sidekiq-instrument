@@ -6,10 +6,10 @@ require 'sidekiq/instrument/version'
 Gem::Specification.new do |spec|
   spec.name          = 'sidekiq-instrument'
   spec.version       = Sidekiq::Instrument::VERSION
-  spec.authors       = ['Matt Larraz']
-  spec.email         = ['mlarraz@enova.com']
+  spec.authors       = ['Loan Application Services']
+  spec.email         = ['application_services@enova.com']
 
-  spec.summary       = 'StatsD instrumentation for Sidekiq'
+  spec.summary       = 'StatsD & DogStatsD Instrumentation for Sidekiq'
   spec.homepage      = 'https://github.com/enova/sidekiq-instrument'
   spec.license       = 'MIT'
 
@@ -18,10 +18,13 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'sidekiq', '>= 4.2', '< 7'
   spec.add_dependency 'statsd-instrument', '>= 2.0.4'
+  spec.add_dependency 'dogstatsd-ruby', '~> 5.5.0'
+  spec.add_dependency 'activesupport', '>= 5.1', '< 7'
 
   spec.add_development_dependency 'bundler', '~> 2.0', '>= 2.0.2'
   spec.add_development_dependency 'rake', '~> 12.0'
   spec.add_development_dependency 'rspec', '~> 3.0'
   spec.add_development_dependency 'pry-byebug', '~> 3.4'
-  spec.add_development_dependency 'coveralls', '~> 0.8'
+  spec.add_development_dependency 'simplecov'
+  spec.add_development_dependency 'simplecov-cobertura'
 end

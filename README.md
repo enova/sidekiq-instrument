@@ -1,7 +1,5 @@
 # Sidekiq::Instrument
 
-> TODO: Integrate GitHub Actions with this repo, as TravisCI support has been deprecated.
-
 Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] library and \[optionally\] DataDog's [dogstatsd-ruby](https://github.com/DataDog/dogstatsd-ruby), incrementing a counter for each enqueue and dequeue per job type, and timing the full runtime of your perform method.
 
 ## Installation

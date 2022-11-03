@@ -20,8 +20,18 @@ RSpec.describe Sidekiq::Instrument::Worker do
     end
 
     context 'with DogStatsD client' do
+      let(:dogstatsd) { Sidekiq::Instrument::Statter.dogstatsd }
+
       it 'sends the appropriate metrics via DogStatsD' do
-        expect(Sidekiq::Instrument::Statter.dogstatsd).to receive(:gauge).exactly(7).times
+        allow(dogstatsd).to receive(:gauge).with('sidekiq.queue.size', any_args).at_least(:once)
+        allow(dogstatsd).to receive(:gauge).with('sidekiq.queue.latency', any_args).at_least(:once)
+
+        expect(dogstatsd).to receive(:gauge).with('sidekiq.processed', anything)
+        expect(dogstatsd).to receive(:gauge).with('sidekiq.workers', anything)
+        expect(dogstatsd).to receive(:gauge).with('sidekiq.pending', anything)
+        expect(dogstatsd).to receive(:gauge).with('sidekiq.failed', anything)
+        expect(dogstatsd).to receive(:gauge).with('sidekiq.working', anything)
+
         worker.perform
       end
     end

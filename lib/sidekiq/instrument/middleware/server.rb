@@ -17,6 +17,8 @@ module Sidekiq::Instrument
       Statter.statsd.increment(metric_name(worker, 'error'))
       Statter.dogstatsd&.increment('sidekiq.error', worker_dog_options(worker))
       raise e
+    ensure
+      Statter.dogstatsd&.flush(sync: true)
     end
   end
 end

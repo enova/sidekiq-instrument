@@ -10,8 +10,9 @@ module Sidekiq::Instrument
       class_instance = klass.new
       Statter.statsd.increment(metric_name(class_instance, 'enqueue'))
       Statter.dogstatsd&.increment('sidekiq.enqueue', worker_dog_options(class_instance))
-
-      yield
+      result = yield
+      Statter.dogstatsd&.flush(sync: true)
+      result
     end
   end
 end

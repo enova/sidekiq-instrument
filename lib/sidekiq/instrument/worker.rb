@@ -38,6 +38,8 @@ module Sidekiq::Instrument
         Statter.statsd.gauge("shared.sidekiq.#{queue.name}.latency", queue.latency)
         Statter.dogstatsd&.gauge('sidekiq.queue.latency', queue.latency, tags: ["queue:#{queue.name}"])
       end
+
+      Statter.dogstatsd&.flush(sync: true)
     end
   end
 end

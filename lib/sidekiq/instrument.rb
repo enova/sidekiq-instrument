@@ -1,4 +1,5 @@
-require 'active_support/core_ext/class/attribute'
+require "active_support/core_ext/class/attribute"
+require "statsd/instrument"
 
 require "sidekiq/instrument/statter"
 require "sidekiq/instrument/version"

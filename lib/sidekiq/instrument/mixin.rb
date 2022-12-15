@@ -9,7 +9,7 @@ module Sidekiq::Instrument
     end
 
     def worker_dog_options(worker)
-      { tags: ["queue:#{queue_name(worker)}", "worker:#{class_name(worker)}"] }
+      { tags: ["queue:#{queue_name(worker)}", "worker:#{underscore(class_name(worker))}"] }
     end
 
     private
@@ -20,6 +20,14 @@ module Sidekiq::Instrument
 
     def class_name(worker)
       worker.class.name.gsub('::', '_')
+    end
+
+    def underscore(string)
+      string.gsub(/::/, '/').
+        gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+        gsub(/([a-z\d])([A-Z])/,'\1_\2').
+        tr("-", "_").
+        downcase
     end
   end
 end

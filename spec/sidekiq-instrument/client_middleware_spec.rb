@@ -26,7 +26,7 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
       end
 
       it 'increments the DogStatsD enqueue counter' do
-        expect(Sidekiq::Instrument::Statter.dogstatsd).to receive(:increment).with('sidekiq.enqueue', { tags: ['queue:default', 'worker:MyWorker'] }).once
+        expect(Sidekiq::Instrument::Statter.dogstatsd).to receive(:increment).with('sidekiq.enqueue', { tags: ['queue:default', 'worker:my_worker'] }).once
         MyWorker.perform_async
       end
     end

@@ -2,7 +2,7 @@ require 'sidekiq/instrument/middleware/server'
 
 RSpec.describe Sidekiq::Instrument::ServerMiddleware do
   describe '#call' do
-    let(:expected_dog_options) { { tags: ['queue:default', 'worker:MyWorker'] } }
+    let(:expected_dog_options) { { tags: ['queue:default', 'worker:my_worker'] } }
 
     before(:all) do
       Sidekiq::Testing.server_middleware do |chain|

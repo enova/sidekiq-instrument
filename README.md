@@ -101,8 +101,8 @@ For each job, the following metrics and tags will be reported:
    job fails.
 
 For each queue, the following metrics and tags will be reported:
-1. **sidekiq.queue_size (tags: {queue: _queue_})**: gauge of how many jobs are in the queue
-1. **sidekiq.queue_latency (tags: {queue: _queue_})**: gauge of how long the oldest job has been in the queue
+1. **sidekiq.queue.size (tags: {queue: _queue_})**: gauge of how many jobs are in the queue
+1. **sidekiq.queue.latency (tags: {queue: _queue_})**: gauge of how long the oldest job has been in the queue
 
 ## Worker
 There is a worker, `Sidekiq::Instrument::Worker`, that submits gauges

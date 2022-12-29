@@ -54,16 +54,43 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
       end
     end
 
-    context 'no stat increment before yielding' do
+    context 'with fakemiddleware error' do
       before do
-        allow_any_instance_of(MyWorker).to receive(:perform_async).and_yield(true)
+        Sidekiq.configure_client do |c|
+          c.client_middleware do |chain|
+            chain.insert_before described_class, FakeMiddleware
+            # chain.add described_class
+          end
+        end
+      end
+
+      after do
+        Sidekiq.configure_client do |c|
+          c.client_middleware do |chain|
+            chain.remove FakeMiddleware
+          end
+        end
+      end
+
+      class FakeMiddleware
+        # include Sidekiq::ClientMiddleware
+        def call(worker_class, job, queue, redis_pool)
+          raise 'fake error'
+        end
       end
 
       it 'does not increment the enqueue stat' do
-        MyWorker.perform_async
-        expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:increment).with('sidekiq.enqueue', { tags: ['queue:default', 'worker:my_worker'] })
+        # expect { MyErroneousWorker.perform_async}.to yield_control
+        expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:increment)
+        # expect { MyWorker.perform_async }.to raise_error('fake error')
+        # MyWorker.perform_async
       end
     end
+    context 'with fakemiddleware error' do
+      it 'does increment the enqueue stat' do
+        expect(Sidekiq::Instrument::Statter.dogstatsd).to receive(:increment)
+        expect { MyWorker.perform_async }.not_to raise_error
+      end
     end
   end
 end

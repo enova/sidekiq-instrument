@@ -53,5 +53,17 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
         expect { MyWorker.perform_async }.not_to raise_error
       end
     end
+
+    context 'no stat increment before yielding' do
+      before do
+        allow_any_instance_of(MyWorker).to receive(:perform_async).and_yield(true)
+      end
+
+      it 'does not increment the enqueue stat' do
+        MyWorker.perform_async
+        expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:increment).with('sidekiq.enqueue', { tags: ['queue:default', 'worker:my_worker'] })
+      end
+    end
+    end
   end
 end

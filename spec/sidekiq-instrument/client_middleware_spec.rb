@@ -58,8 +58,7 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
       before do
         Sidekiq.configure_client do |c|
           c.client_middleware do |chain|
-            chain.insert_before described_class, FakeMiddleware
-            # chain.add described_class
+            chain.add FakeMiddleware
           end
         end
       end
@@ -73,19 +72,17 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
       end
 
       class FakeMiddleware
-        # include Sidekiq::ClientMiddleware
         def call(worker_class, job, queue, redis_pool)
           raise 'fake error'
         end
       end
 
       it 'does not increment the enqueue stat' do
-        # expect { MyErroneousWorker.perform_async}.to yield_control
         expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:increment)
-        # expect { MyWorker.perform_async }.to raise_error('fake error')
-        # MyWorker.perform_async
+        expect { MyWorker.perform_async }.to raise_error('fake error')
       end
     end
+
     context 'with fakemiddleware error' do
       it 'does increment the enqueue stat' do
         expect(Sidekiq::Instrument::Statter.dogstatsd).to receive(:increment)

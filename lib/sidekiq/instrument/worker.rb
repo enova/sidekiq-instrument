@@ -25,7 +25,7 @@ module Sidekiq::Instrument
         Statter.dogstatsd&.gauge("sidekiq.#{stat}", info.send(method))
       end
 
-      working = Sidekiq::ProcessSet.new.select { |p| p[:busy] == 1 }.count
+      working = Sidekiq::Workers.new.count
       Statter.statsd.gauge('shared.sidekiq.stats.working', working)
       Statter.dogstatsd&.gauge('sidekiq.working', working)
 

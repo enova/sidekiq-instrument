@@ -9,10 +9,10 @@ module Sidekiq::Instrument
     # (i.e. the metrics will reported as :processed, :workers, :pending, and :failed).
     # Feel free to override.
     METRIC_NAMES = {
-      processed:    nil,
+      processed: nil,
       workers_size: :workers,
-      enqueued:     :pending,
-      failed:       nil
+      enqueued: :pending,
+      failed: nil
     }
 
     def perform
@@ -29,17 +29,35 @@ module Sidekiq::Instrument
       Statter.statsd.gauge('shared.sidekiq.stats.working', working)
       Statter.dogstatsd&.gauge('sidekiq.working', working)
 
-      info.queues.each do |name, size|
-        Statter.statsd.gauge("shared.sidekiq.#{name}.size", size)
-        Statter.dogstatsd&.gauge('sidekiq.queue.size', size, tags: ["queue:#{name}"])
-      end
-
       Sidekiq::Queue.all.each do |queue|
+        Statter.statsd.gauge("shared.sidekiq.#{queue.name}.size", queue.size)
+        Statter.dogstatsd&.gauge('sidekiq.queue.size', queue.size, tags: dd_tags(queue))
+
         Statter.statsd.gauge("shared.sidekiq.#{queue.name}.latency", queue.latency)
-        Statter.dogstatsd&.gauge('sidekiq.queue.latency', queue.latency, tags: ["queue:#{queue.name}"])
+        Statter.dogstatsd&.gauge('sidekiq.queue.latency', queue.latency, tags: dd_tags(queue))
       end
 
       Statter.dogstatsd&.flush(sync: true)
+    end
+
+    private
+
+    # @param [Sidekiq::Queue] queue used for stats emission
+    # @return [Array<String>] an array of tags
+    # @example this method can be override to add more tags
+    #   class MyStatsWorker < Sidekiq::Instrument::Worker
+    #     private
+    #
+    #     def dd_tags(queue)
+    #       custom_tags = []
+    #       queue_type = queue.name.match?(/readonly$/) ? 'read_only'  : 'regular'
+    #       custom_tags << "queue_type:#{queue_type}"
+    #
+    #       super(queue) | custom_tags
+    #     end
+    #   end
+    def dd_tags(queue)
+      ["queue:#{queue.name}"]
     end
   end
 end

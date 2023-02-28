@@ -1,4 +1,7 @@
+# frozen_string_literal: true
+
 require 'sidekiq/instrument/mixin'
+require 'pry'
 
 module Sidekiq::Instrument
   class ServerMiddleware
@@ -9,6 +12,7 @@ module Sidekiq::Instrument
       Statter.dogstatsd&.increment('sidekiq.dequeue', worker_dog_options(worker))
 
       start_time = Time.now
+      WorkerMetrics.trace_workers_decrement_counter(worker.class.to_s)
       yield block
       execution_time_ms = (Time.now - start_time) * 1000
       Statter.statsd.measure(metric_name(worker, 'runtime'), execution_time_ms)
@@ -22,4 +26,3 @@ module Sidekiq::Instrument
     end
   end
 end
-

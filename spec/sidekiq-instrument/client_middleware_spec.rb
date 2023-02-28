@@ -39,6 +39,39 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
       end
     end
 
+    context 'with WorkerMetrics.enabled true' do
+      let(:worker_metric_name) do
+        "sidekiq_instrument_trace_workers::in_queue"
+      end
+      it 'increments the enqueue counter' do
+          Sidekiq::Instrument::WorkerMetrics.enabled = true
+          Redis.new.hdel worker_metric_name ,'MyOtherWorker'
+          Sidekiq::Instrument::WorkerMetrics.redis_config = {
+            host:        ENV['REDIS_HOST'],
+            port:        ENV['REDIS_PORT'],
+            db:          0
+          }
+          MyOtherWorker.perform_async
+          expect(
+          Redis.new.hget worker_metric_name ,'MyOtherWorker'
+        ).to eq('1')
+      end
+    end
+
+    context 'with WorkerMetrics.enabled true and redis_config not provided' do
+      let(:worker_metric_name) do
+        "sidekiq_instrument_trace_workers::in_queue"
+      end
+      it 'increments the enqueue counter' do
+          Sidekiq::Instrument::WorkerMetrics.enabled = true
+          Redis.new.hdel worker_metric_name ,'MyOtherWorker'
+          MyOtherWorker.perform_async
+          expect(
+          Redis.new.hget worker_metric_name ,'MyOtherWorker'
+        ).to eq('1')
+      end
+    end
+
     context 'without optional DogStatsD client' do
       before do
         @tmp = Sidekiq::Instrument::Statter.dogstatsd

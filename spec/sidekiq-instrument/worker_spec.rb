@@ -40,6 +40,7 @@ RSpec.describe Sidekiq::Instrument::Worker do
       before do
         @tmp = Sidekiq::Instrument::Statter.dogstatsd
         Sidekiq::Instrument::Statter.dogstatsd = nil
+        Sidekiq::Instrument::WorkerMetrics.enabled = true
       end
 
       after do

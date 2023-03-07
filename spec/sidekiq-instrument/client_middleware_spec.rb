@@ -45,7 +45,7 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
       end
       it 'increments the enqueue counter' do
           Sidekiq::Instrument::WorkerMetrics.enabled = true
-          Redis.new.hdel worker_metric_name ,'MyOtherWorker'
+          Redis.new.hdel worker_metric_name ,'my_other_worker'
           Sidekiq::Instrument::WorkerMetrics.redis_config = {
             host:        ENV['REDIS_HOST'],
             port:        ENV['REDIS_PORT'],
@@ -53,7 +53,7 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
           }
           MyOtherWorker.perform_async
           expect(
-          Redis.new.hget worker_metric_name ,'MyOtherWorker'
+          Redis.new.hget worker_metric_name ,'my_other_worker'
         ).to eq('1')
       end
     end
@@ -64,10 +64,10 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
       end
       it 'increments the enqueue counter' do
           Sidekiq::Instrument::WorkerMetrics.enabled = true
-          Redis.new.hdel worker_metric_name ,'MyOtherWorker'
+          Redis.new.hdel worker_metric_name ,'my_other_worker'
           MyOtherWorker.perform_async
           expect(
-          Redis.new.hget worker_metric_name ,'MyOtherWorker'
+          Redis.new.hget worker_metric_name ,'my_other_worker'
         ).to eq('1')
       end
     end

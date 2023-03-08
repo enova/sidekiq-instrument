@@ -28,11 +28,9 @@ jobs:
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
 
       - name: Start Redis
-        uses: supercharge/redis-github-action@1.4.0
+        uses: supercharge/redis-github-action@1.5.0
         with:
           redis-version: ${{ matrix.redis-version }}
-          port: 6379
-          host: 127.0.0.1
 
       - name: Run tests
         run: bundle exec rake

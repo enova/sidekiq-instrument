@@ -58,13 +58,13 @@ module Sidekiq
 
           if redis_config?
             redis_pool_user.with do |redis|
-              all_keys = redis.call 'HGETALL', worker_metric_name.all_keys
-              redis.call 'HDEL', worker_metric_name, all_keys
+              all_keys = redis.call 'HGETALL', worker_metric_name
+              redis.call 'HDEL', worker_metric_name, all_keys.keys
             end
           else
             Sidekiq.redis do |redis|
-              all_keys = redis.hgetall worker_metric_name.all_keys
-              redis.hdel worker_metric_name, all_keys
+              all_keys = redis.hgetall worker_metric_name
+              redis.hdel worker_metric_name, all_keys.keys
             end
           end
         end

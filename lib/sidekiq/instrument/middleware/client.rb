@@ -1,4 +1,7 @@
+# frozen_string_literal: true
+
 require 'sidekiq/instrument/mixin'
+require 'active_support/core_ext/string/inflections'
 
 module Sidekiq::Instrument
   class ClientMiddleware
@@ -10,6 +13,7 @@ module Sidekiq::Instrument
       class_instance = klass.new
       Statter.statsd.increment(metric_name(class_instance, 'enqueue'))
       Statter.dogstatsd&.increment('sidekiq.enqueue', worker_dog_options(class_instance))
+      WorkerMetrics.trace_workers_increment_counter(klass.name.underscore, redis_pool)
       result = yield
       Statter.dogstatsd&.flush(sync: true)
       result

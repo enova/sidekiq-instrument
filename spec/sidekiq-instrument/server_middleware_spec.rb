@@ -38,6 +38,39 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         expect(Sidekiq::Instrument::Statter.dogstatsd).to receive(:timing).once
         MyWorker.perform_async
       end
+
+      context 'with WorkerMetrics.enabled true' do
+        let(:worker_metric_name) do
+          "sidekiq_instrument_trace_workers::in_queue"
+        end
+        it 'increments the enqueue counter' do
+            Sidekiq::Instrument::WorkerMetrics.enabled = true
+            Sidekiq::Instrument::WorkerMetrics.redis_config = {
+              host:        ENV['REDIS_HOST'],
+              port:        ENV['REDIS_PORT'],
+              db:          0
+            }
+            Redis.new.hdel worker_metric_name ,'my_other_worker'
+            MyOtherWorker.perform_async
+            expect(
+            Redis.new.hget worker_metric_name ,'my_other_worker'
+          ).to eq('-1')
+        end
+      end
+
+      context 'with WorkerMetrics.enabled true, and redis_config not given' do
+        let(:worker_metric_name) do
+          "sidekiq_instrument_trace_workers::in_queue"
+        end
+        it 'increments the enqueue counter' do
+            Sidekiq::Instrument::WorkerMetrics.enabled = true
+            Redis.new.hdel worker_metric_name ,'my_other_worker'
+            MyOtherWorker.perform_async
+            expect(
+            Redis.new.hget worker_metric_name ,'my_other_worker'
+          ).to eq('-1')
+        end
+      end
     end
 
     context 'when a job fails' do

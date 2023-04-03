@@ -28,7 +28,7 @@ module Sidekiq::Instrument
       working = Sidekiq::Workers.new.count
       Statter.statsd.gauge('shared.sidekiq.stats.working', working)
       Statter.dogstatsd&.gauge('sidekiq.working', working)
-
+      send_worker_metrics
       Sidekiq::Queue.all.each do |queue|
         Statter.statsd.gauge("shared.sidekiq.#{queue.name}.size", queue.size)
         Statter.dogstatsd&.gauge('sidekiq.queue.size', queue.size, tags: dd_tags(queue))
@@ -58,6 +58,15 @@ module Sidekiq::Instrument
     #   end
     def dd_tags(queue)
       ["queue:#{queue.name}"]
+    end
+
+    def send_worker_metrics
+      return unless WorkerMetrics.enabled
+
+      WorkerMetrics.workers_in_queue.each do |key, value|
+        Statter.statsd.gauge("shared.sidekiq.trace.inqueue.#{key}", value)
+        Statter.dogstatsd&.gauge("shared.sidekiq.trace.inqueue.#{key}", value)
+      end
     end
   end
 end

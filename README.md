@@ -67,6 +67,9 @@ Sidekiq.configure_client do |config|
     chain.add Sidekiq::Instrument::ClientMiddleware
   end
 end
+
+Sidekiq::Instrument::WorkerMetrics.enabled = true # Set true to enable worker metrics
+Sidekiq::Instrument::WorkerMetrics.namespace = <APP_NAME>
 ```
 
 ## StatsD Keys
@@ -78,7 +81,7 @@ For each job, the following metrics will be reported:
    worker begins performing a job.
 3. **shared.sidekiq._queue_._job_.runtime**: timer of the total time spent
    in `perform`, in milliseconds.
-3. **shared.sidekiq._queue_._job_.error**: counter incremented each time a
+4. **shared.sidekiq._queue_._job_.error**: counter incremented each time a
    job fails.
 
 The metric names can be changed by overriding the `statsd_metric_name`
@@ -86,7 +89,10 @@ method in your worker classes.
 
 For each queue, the following metrics will be reported:
 1. **shared.sidekiq._queue_.size**: gauge of how many jobs are in the queue
-1. **shared.sidekiq._queue_.latency**: gauge of how long the oldest job has been in the queue
+2. **shared.sidekiq._queue_.latency**: gauge of how long the oldest job has been in the queue
+
+For each worker, the following metrics and tags will be reported:
+1. **sidekiq.worker_metrics.inqueue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement
 
 ## DogStatsD Keys
 For each job, the following metrics and tags will be reported:
@@ -97,12 +103,15 @@ For each job, the following metrics and tags will be reported:
    worker begins performing a job.
 3. **sidekiq.runtime (tags: {queue: _queue_, worker: _job_})**: timer of the total time spent
    in `perform`, in milliseconds.
-3. **sidekiq.error (tags: {queue: _queue_, worker: _job_})**: counter incremented each time a
+4. **sidekiq.error (tags: {queue: _queue_, worker: _job_})**: counter incremented each time a
    job fails.
 
 For each queue, the following metrics and tags will be reported:
 1. **sidekiq.queue.size (tags: {queue: _queue_})**: gauge of how many jobs are in the queue
-1. **sidekiq.queue.latency (tags: {queue: _queue_})**: gauge of how long the oldest job has been in the queue
+2. **sidekiq.queue.latency (tags: {queue: _queue_})**: gauge of how long the oldest job has been in the queue
+
+For each worker, the following metrics and tags will be reported:
+1. **sidekiq.worker_metrics.inqueue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement
 
 ## Worker
 There is a worker, `Sidekiq::Instrument::Worker`, that submits gauges

@@ -45,11 +45,6 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         end
         it 'increments the enqueue counter' do
             Sidekiq::Instrument::WorkerMetrics.enabled = true
-            Sidekiq::Instrument::WorkerMetrics.redis_config = {
-              host:        ENV['REDIS_HOST'],
-              port:        ENV['REDIS_PORT'],
-              db:          0
-            }
             Redis.new.hdel worker_metric_name ,'my_other_worker'
             MyOtherWorker.perform_async
             expect(

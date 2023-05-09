@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'statsd-instrument', '>= 2.0.4'
   spec.add_dependency 'dogstatsd-ruby', '~> 5.5'
   spec.add_dependency 'activesupport', '>= 5.1', '< 7'
-  spec.add_dependency "redis-client", ">= 0.11.0"
+  spec.add_dependency "redis-client", ">= 0.14.1"
 
   spec.add_development_dependency 'bundler', '~> 2.0', '>= 2.0.2'
   spec.add_development_dependency 'rake', '~> 12.0'

@@ -64,8 +64,8 @@ module Sidekiq::Instrument
       return unless WorkerMetrics.enabled
 
       WorkerMetrics.workers_in_queue.each do |key, value|
-        Statter.statsd.gauge("shared.sidekiq.trace.inqueue.#{key}", value)
-        Statter.dogstatsd&.gauge("shared.sidekiq.trace.inqueue.#{key}", value)
+        Statter.statsd.gauge("shared.sidekiq.worker_metrics.inqueue.#{key}", value)
+        Statter.dogstatsd&.gauge("shared.sidekiq.worker_metrics.inqueue.#{key}", value)
       end
     end
   end

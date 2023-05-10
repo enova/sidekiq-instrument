@@ -104,7 +104,7 @@ RSpec.describe Sidekiq::Instrument::Worker do
       end
 
       it_behaves_like 'worker behavior', %w[
-        shared.sidekiq.trace.inqueue.my_other_worker
+        shared.sidekiq.worker_metrics.inqueue.my_other_worker
         sidekiq.processed
         sidekiq.workers
         sidekiq.pending

@@ -7,93 +7,46 @@ module Sidekiq
     # Stores worker count with a key sidekiq_instrument_trace_workers:#{namespace}:in_queue
     # Values are hash having keys as worker names.
     class WorkerMetrics
-      class_attribute :enabled, :namespace, :redis_config
-
-      class_attribute :redis_password
+      class_attribute :enabled, :namespace
 
       class << self
-        def redis_pool_user
-          @redis_pool_user ||= begin
-            redis_client_config = RedisClient.config(**redis_config)
-            @redis = redis_client_config.new_pool(
-              timeout: 0.5, size: Integer(ENV.fetch('RAILS_MAX_THREADS', 5))
-            )
-          end
-        end
-
-        def reset_redis
-          @redis = nil
-        end
-
         def trace_workers_increment_counter(klass_name, sidekiq_redis_pool_user)
           return unless enabled?
 
-          if redis_config?
-            redis_pool_user.with do |redis|
-              redis.call 'HINCRBY', worker_metric_name, klass_name, 1
-            end
-          else
-            sidekiq_redis_pool_user.with do |redis|
-              redis.hincrby worker_metric_name, klass_name, 1
-            end
+          Sidekiq.redis do |redis|
+            redis.hincrby(worker_metric_name, klass_name, 1)
           end
         end
 
         def trace_workers_decrement_counter(klass_name)
           return unless enabled?
 
-          if redis_config?
-            redis_pool_user.with do |redis|
-              redis.call 'HINCRBY', worker_metric_name, klass_name, -1
-            end
-          else
-            Sidekiq.redis do |redis|
-              redis.hincrby worker_metric_name, klass_name, -1
-            end
+          Sidekiq.redis do |redis|
+            redis.hincrby(worker_metric_name, klass_name, -1)
           end
         end
 
         def reset_counters
           return unless enabled?
 
-          if redis_config?
-            redis_pool_user.with do |redis|
-              all_keys = redis.call 'HGETALL', worker_metric_name
-              redis.call 'HDEL', worker_metric_name, all_keys.keys
-            end
-          else
-            Sidekiq.redis do |redis|
-              all_keys = redis.hgetall worker_metric_name
-              redis.hdel worker_metric_name, all_keys.keys
-            end
+          Sidekiq.redis do |redis|
+            all_keys = redis.hgetall(worker_metric_name)
+            redis.hdel(worker_metric_name, all_keys.keys)
           end
         end
 
         def reset_counter(key)
           return unless enabled?
 
-          if redis_config?
-            redis_pool_user.with do |redis|
-              redis.call 'HDEL', worker_metric_name, key
-            end
-          else
-            Sidekiq.redis do |redis|
-              redis.hdel worker_metric_name, key
-            end
+          Sidekiq.redis do |redis|
+            redis.hdel(worker_metric_name, key)
           end
         end
 
         def workers_in_queue
           return unless enabled?
-
-          if redis_config?
-            redis_pool_user.with do |redis|
-              redis.call 'HGETALL', worker_metric_name
-            end
-          else
-            Sidekiq.redis do |redis|
-              redis.hgetall worker_metric_name
-            end
+          Sidekiq.redis do |redis|
+            redis.hgetall(worker_metric_name)
           end
         end
 

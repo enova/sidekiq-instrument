@@ -65,7 +65,7 @@ module Sidekiq::Instrument
 
       WorkerMetrics.workers_in_queue.each do |key, value|
         Statter.statsd.gauge("shared.sidekiq.worker_metrics.inqueue.#{key}", value)
-        Statter.dogstatsd&.gauge("shared.sidekiq.worker_metrics.inqueue.#{key}", value)
+        Statter.dogstatsd&.gauge("shared.sidekiq.worker_metrics.inqueue", value, tags: ["worker:#{key}"])
       end
     end
   end

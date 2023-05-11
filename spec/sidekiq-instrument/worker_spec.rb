@@ -33,7 +33,11 @@ RSpec.describe Sidekiq::Instrument::Worker do
           allow(dogstatsd).to receive(:gauge).with('sidekiq.queue.size', any_args).at_least(:once)
           allow(dogstatsd).to receive(:gauge).with('sidekiq.queue.latency', any_args).at_least(:once)
           expected_stats.each do |ex|
-            expect(dogstatsd).to receive(:gauge).with(ex, anything)
+            if ex.include?('shared.sidekiq.worker_metrics.inqueue')
+              expect(dogstatsd).to receive(:gauge).with(ex, anything, anything)
+            else
+              expect(dogstatsd).to receive(:gauge).with(ex, anything)
+            end
           end
           worker.perform
         end
@@ -104,7 +108,7 @@ RSpec.describe Sidekiq::Instrument::Worker do
       end
 
       it_behaves_like 'worker behavior', %w[
-        shared.sidekiq.worker_metrics.inqueue.my_other_worker
+        shared.sidekiq.worker_metrics.inqueue
         sidekiq.processed
         sidekiq.workers
         sidekiq.pending

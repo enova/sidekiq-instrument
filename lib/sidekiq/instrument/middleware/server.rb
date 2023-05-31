@@ -12,7 +12,6 @@ module Sidekiq::Instrument
       Statter.dogstatsd&.increment('sidekiq.dequeue', worker_dog_options(worker))
 
       start_time = Time.now
-      WorkerMetrics.trace_workers_decrement_counter(worker.class.to_s.underscore)
       yield block
       execution_time_ms = (Time.now - start_time) * 1000
       Statter.statsd.measure(metric_name(worker, 'runtime'), execution_time_ms)
@@ -22,6 +21,7 @@ module Sidekiq::Instrument
       Statter.dogstatsd&.increment('sidekiq.error', worker_dog_options(worker))
       raise e
     ensure
+      WorkerMetrics.trace_workers_decrement_counter(worker.class.to_s.underscore)
       Statter.dogstatsd&.flush(sync: true)
     end
   end

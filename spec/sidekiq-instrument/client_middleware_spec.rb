@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'sidekiq/instrument/middleware/client'
 
 RSpec.describe Sidekiq::Instrument::ClientMiddleware do
@@ -28,22 +30,24 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
 
     context 'without statsd_metric_name' do
       it 'increments the StatsD enqueue counter' do
-        expect {
+        expect do
           MyWorker.perform_async
-        }.to trigger_statsd_increment('shared.sidekiq.default.MyWorker.enqueue')
+        end.to trigger_statsd_increment('shared.sidekiq.default.MyWorker.enqueue')
       end
 
       it 'increments the DogStatsD enqueue counter' do
-        expect(Sidekiq::Instrument::Statter.dogstatsd).to receive(:increment).with('sidekiq.enqueue', { tags: ['queue:default', 'worker:my_worker'] }).once
+        expect(
+          Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.enqueue', { tags: ['queue:default', 'worker:my_worker'] }).once
         MyWorker.perform_async
       end
     end
 
     context 'with statsd_metric_name' do
       it 'increments the enqueue counter' do
-        expect {
+        expect do
           MyOtherWorker.perform_async
-        }.to trigger_statsd_increment('my_other_worker.enqueue')
+        end.to trigger_statsd_increment('my_other_worker.enqueue')
       end
     end
 
@@ -51,9 +55,9 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
       it 'increments the enqueue counter' do
         Sidekiq::Instrument::WorkerMetrics.enabled = true
         MyOtherWorker.perform_async
-        expect(Redis.new.hget(worker_metric_name ,'my_other_worker')).to eq('1')
+        expect(Redis.new.hget(worker_metric_name, 'my_other_worker')).to eq('1')
         MyOtherWorker.perform_async
-        expect(Redis.new.hget(worker_metric_name ,'my_other_worker')).to eq('2')
+        expect(Redis.new.hget(worker_metric_name, 'my_other_worker')).to eq('2')
       end
     end
 
@@ -75,11 +79,6 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
     context 'when a job fails' do
       before do
         allow_any_instance_of(MyWorker).to receive(:perform).and_raise('foo')
-      end
-
-      it 'does not increase the redis counter' do
-        expect(Redis.new.hget worker_metric_name ,'my_worker').to eq(nil)
-        MyWorker.perform_async rescue nil
       end
 
       it 're-raises the error' do

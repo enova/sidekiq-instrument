@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'sidekiq/instrument/worker'
 
 RSpec.describe Sidekiq::Instrument::Worker do
@@ -9,7 +11,7 @@ RSpec.describe Sidekiq::Instrument::Worker do
     let(:worker) { described_class.new }
 
     before do
-      Redis.new.hdel worker_metric_name ,'my_worker'
+      Redis.new.hdel worker_metric_name, 'my_worker'
     end
 
     shared_examples 'worker behavior' do |expected_stats|
@@ -147,7 +149,7 @@ RSpec.describe Sidekiq::Instrument::Worker do
           chain.add Sidekiq::Instrument::ServerMiddleware
         end
       end
-  
+
       after do
         Sidekiq.server_middleware do |chain|
           chain.remove Sidekiq::Instrument::ServerMiddleware
@@ -157,22 +159,32 @@ RSpec.describe Sidekiq::Instrument::Worker do
       it 'increments the in queue counter' do
         Sidekiq::Instrument::WorkerMetrics.enabled = true
         redis = Redis.new
-        expect(redis.hget(worker_metric_name ,'my_worker')).to be nil
+        expect(redis.hget(worker_metric_name, 'my_worker')).to be nil
         MyWorker.perform_async
-        expect(redis.hget(worker_metric_name ,'my_worker')).to eq('1')
+        expect(redis.hget(worker_metric_name, 'my_worker')).to eq('1')
         MyWorker.perform_async
-        expect(redis.hget(worker_metric_name ,'my_worker')).to eq('2')
+        expect(redis.hget(worker_metric_name, 'my_worker')).to eq('2')
       end
 
       it 'increments the DogStatsD failure counter' do
-        expect(Sidekiq::Instrument::Statter.dogstatsd).to receive(:increment).with('sidekiq.enqueue', expected_dog_options).once
+        expect(
+          Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.enqueue', expected_dog_options).once
         expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
-        MyWorker.perform_async rescue nil
+        begin
+          MyWorker.perform_async
+        rescue StandardError
+          nil
+        end
       end
 
       it 'does not increase the redis counter' do
-        expect(Redis.new.hget worker_metric_name ,'my_worker').to eq(nil)
-        MyWorker.perform_async rescue nil
+        expect(Redis.new.hget(worker_metric_name, 'my_worker')).to eq(nil)
+        begin
+          MyWorker.perform_async
+        rescue StandardError
+          nil
+        end
       end
     end
 
@@ -183,7 +195,7 @@ RSpec.describe Sidekiq::Instrument::Worker do
           chain.add Sidekiq::Instrument::ServerMiddleware
         end
       end
-  
+
       after do
         Sidekiq::Testing.server_middleware do |chain|
           chain.remove Sidekiq::Instrument::ServerMiddleware
@@ -193,21 +205,25 @@ RSpec.describe Sidekiq::Instrument::Worker do
       it 'does not increment the in queue counter' do
         Sidekiq::Instrument::WorkerMetrics.enabled = true
         redis = Redis.new
-        expect(redis.hget(worker_metric_name ,'my_worker')).to be nil
+        expect(redis.hget(worker_metric_name, 'my_worker')).to be nil
         MyWorker.perform_async
-        expect(redis.hget(worker_metric_name ,'my_worker')).to eq('0')
+        expect(redis.hget(worker_metric_name, 'my_worker')).to eq('0')
         MyWorker.perform_async
-        expect(redis.hget(worker_metric_name ,'my_worker')).to eq('0')
+        expect(redis.hget(worker_metric_name, 'my_worker')).to eq('0')
         redis.hincrby(worker_metric_name, 'my_worker', 1)
         MyWorker.perform_async
-        expect(redis.hget(worker_metric_name ,'my_worker')).to eq('1')
+        expect(redis.hget(worker_metric_name, 'my_worker')).to eq('1')
       end
 
       it 'calls the decrement counter' do
         expect(
           Sidekiq::Instrument::WorkerMetrics
-          ).to receive(:trace_workers_decrement_counter).with('my_worker').once
-        MyWorker.perform_async rescue nil
+        ).to receive(:trace_workers_decrement_counter).with('my_worker').once
+        begin
+          MyWorker.perform_async
+        rescue StandardError
+          nil
+        end
       end
     end
   end

@@ -7,7 +7,7 @@ module Sidekiq::Instrument
   class ServerMiddleware
     include Sidekiq::Instrument::MetricNames
 
-    def call(worker, job, queue, &block)
+    def call(worker, _job, _queue, &block)
       Statter.statsd.increment(metric_name(worker, 'dequeue'))
       Statter.dogstatsd&.increment('sidekiq.dequeue', worker_dog_options(worker))
 

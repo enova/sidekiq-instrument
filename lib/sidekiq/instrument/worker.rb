@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'sidekiq'
 require 'sidekiq/api'
 
@@ -13,7 +15,7 @@ module Sidekiq::Instrument
       workers_size: :workers,
       enqueued: :pending,
       failed: nil
-    }
+    }.freeze
 
     def perform
       info = Sidekiq::Stats.new
@@ -64,8 +66,8 @@ module Sidekiq::Instrument
       return unless WorkerMetrics.enabled
 
       WorkerMetrics.workers_in_queue.each do |key, value|
-        Statter.statsd.gauge("shared.sidekiq.worker_metrics.inqueue.#{key}", value)
-        Statter.dogstatsd&.gauge("shared.sidekiq.worker_metrics.inqueue", value, tags: ["worker:#{key}"])
+        Statter.statsd.gauge("shared.sidekiq.worker_metrics.in_queue.#{key}", value)
+        Statter.dogstatsd&.gauge('shared.sidekiq.worker_metrics.in_queue', value, tags: ["worker:#{key}"])
       end
     end
   end

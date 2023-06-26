@@ -92,7 +92,7 @@ For each queue, the following metrics will be reported:
 2. **shared.sidekiq._queue_.latency**: gauge of how long the oldest job has been in the queue
 
 For each worker, the following metrics and tags will be reported:
-1. **sidekiq.worker_metrics.inqueue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement
+1. **sidekiq.worker_metrics.in_queue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement
 
 ## DogStatsD Keys
 For each job, the following metrics and tags will be reported:
@@ -111,7 +111,7 @@ For each queue, the following metrics and tags will be reported:
 2. **sidekiq.queue.latency (tags: {queue: _queue_})**: gauge of how long the oldest job has been in the queue
 
 For each worker, the following metrics and tags will be reported:
-1. **sidekiq.worker_metrics.inqueue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement
+1. **sidekiq.worker_metrics.in_queue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement
 
 ## Worker
 There is a worker, `Sidekiq::Instrument::Worker`, that submits gauges

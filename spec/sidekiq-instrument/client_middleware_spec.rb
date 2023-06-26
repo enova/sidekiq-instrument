@@ -38,7 +38,7 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
       it 'increments the DogStatsD enqueue counter' do
         expect(
           Sidekiq::Instrument::Statter.dogstatsd
-          ).to receive(:increment).with('sidekiq.enqueue', { tags: ['queue:default', 'worker:my_worker'] }).once
+        ).to receive(:increment).with('sidekiq.enqueue', { tags: ['queue:default', 'worker:my_worker'] }).once
         MyWorker.perform_async
       end
     end
@@ -52,7 +52,7 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
     end
 
     context 'with WorkerMetrics.enabled true' do
-      it 'increments the enqueue counter' do
+      it 'increments the in_queue counter' do
         Sidekiq::Instrument::WorkerMetrics.enabled = true
         MyOtherWorker.perform_async
         expect(Redis.new.hget(worker_metric_name, 'my_other_worker')).to eq('1')
@@ -73,16 +73,6 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
 
       it 'does not error' do
         expect { MyWorker.perform_async }.not_to raise_error
-      end
-    end
-
-    context 'when a job fails' do
-      before do
-        allow_any_instance_of(MyWorker).to receive(:perform).and_raise('foo')
-      end
-
-      it 're-raises the error' do
-        expect { MyWorker.perform_async }.to raise_error 'foo'
       end
     end
   end

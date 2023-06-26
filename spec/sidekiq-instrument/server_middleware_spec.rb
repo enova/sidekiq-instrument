@@ -51,16 +51,16 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
       end
 
       context 'with WorkerMetrics.enabled true' do
-        it 'increments the in queue counter' do
+        it 'decrements the in_queue counter' do
           Sidekiq::Instrument::WorkerMetrics.enabled = true
-          Redis.new.hdel worker_metric_name, 'my_other_worker'
+          Redis.new.hdel(worker_metric_name, 'my_other_worker')
           MyOtherWorker.perform_async
           expect(Redis.new.hget(worker_metric_name, 'my_other_worker')).to eq('-1')
         end
       end
 
       context 'with WorkerMetrics.enabled true and an errored job' do
-        it 'decrements the in queue counter' do
+        it 'decrements the in_queue counter' do
           Sidekiq::Instrument::WorkerMetrics.enabled = true
           MyOtherWorker.perform_async
           expect(Redis.new.hget(worker_metric_name, 'my_other_worker')).to eq('-1')
@@ -103,15 +103,6 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         end
       end
 
-      it 'does not increase the redis counter' do
-        expect(Redis.new.hget(worker_metric_name, 'my_worker')).to eq(nil)
-        begin
-          MyWorker.perform_async
-        rescue StandardError
-          nil
-        end
-      end
-
       it 're-raises the error' do
         expect { MyWorker.perform_async }.to raise_error 'foo'
       end
@@ -119,7 +110,7 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
       it 'calls the decrement counter' do
         expect(
           Sidekiq::Instrument::WorkerMetrics
-          ).to receive(:trace_workers_decrement_counter).with('my_worker').once
+        ).to receive(:trace_workers_decrement_counter).with('my_worker').once
         begin
           MyWorker.perform_async
         rescue StandardError

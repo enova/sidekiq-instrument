@@ -169,7 +169,7 @@ RSpec.describe Sidekiq::Instrument::Worker do
       it 'increments the DogStatsD failure counter' do
         expect(
           Sidekiq::Instrument::Statter.dogstatsd
-          ).to receive(:increment).with('sidekiq.enqueue', expected_dog_options).once
+        ).to receive(:increment).with('sidekiq.enqueue', expected_dog_options).once
         expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
         begin
           MyWorker.perform_async

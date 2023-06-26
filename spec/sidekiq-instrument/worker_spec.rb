@@ -156,7 +156,7 @@ RSpec.describe Sidekiq::Instrument::Worker do
         end
       end
 
-      it 'increments the in queue counter' do
+      it 'increments the in_queue counter' do
         Sidekiq::Instrument::WorkerMetrics.enabled = true
         redis = Redis.new
         expect(redis.hget(worker_metric_name, 'my_worker')).to be nil
@@ -171,15 +171,6 @@ RSpec.describe Sidekiq::Instrument::Worker do
           Sidekiq::Instrument::Statter.dogstatsd
         ).to receive(:increment).with('sidekiq.enqueue', expected_dog_options).once
         expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
-        begin
-          MyWorker.perform_async
-        rescue StandardError
-          nil
-        end
-      end
-
-      it 'does not increase the redis counter' do
-        expect(Redis.new.hget(worker_metric_name, 'my_worker')).to eq(nil)
         begin
           MyWorker.perform_async
         rescue StandardError

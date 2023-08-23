@@ -7,8 +7,7 @@ Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] libra
 Add the following to your application's Gemfile:
 
 ```ruby
-gem 'sidekiq-instrument'
-gem 'dogstatsd-ruby' # optional
+gem 'sidekiq-instrument', require: false
 ```
 
 And then execute:
@@ -29,12 +28,35 @@ clients via this gem's `Statter` class:
 
 ### StatsD
 
+#### Setup for statsd-instrument v2.x
+Require `sidekiq-instrument` in statsd initializer
+
 ```ruby
 # config/initializers/statsd.rb
 require 'statsd-instrument'
+
 StatsD.prefix  = 'my-app'
 StatsD.backend = StatsD::Instrument::Backends::UDPBackend.new('some-server:8125')
 ```
+
+#### Setup for statsd-instrument v3.x
+
+1. Require `sidekiq-instrument` in statsd initializer
+
+      ```ruby
+      # config/initializers/statsd.rb
+      require 'statsd-instrument'
+
+      ```
+
+2. Configure environment variables (see [statsd-instrument#configuration](https://github.com/Shopify/statsd-instrument#configuration))
+
+      ```bash
+      # .env
+      STATSD_ADDR='some-server:8125'
+      STATSD_IMPLEMENTATION='statsd'
+      STATSD_PREFIX='my-app'
+      ```
 
 ### DogStatsD
 

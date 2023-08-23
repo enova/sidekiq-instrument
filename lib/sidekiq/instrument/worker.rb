@@ -18,19 +18,17 @@ module Sidekiq::Instrument
     }.freeze
 
     def perform
-      info = Sidekiq::Stats.new
-
+      statter = Sidekiq::Stats.new
+      
       self.class::METRIC_NAMES.each do |method, stat|
-        stat ||= method
-
-        Statter.statsd.gauge("shared.sidekiq.stats.#{stat}", info.send(method))
-        Statter.dogstatsd&.gauge("sidekiq.#{stat}", info.send(method))
+        emit_stats(statter, method, stat)
       end
 
-      working = Sidekiq::Workers.new.count
-      Statter.statsd.gauge('shared.sidekiq.stats.working', working)
-      Statter.dogstatsd&.gauge('sidekiq.working', working)
+      # TODO: workers_size and working are the same, can we drop this?
+      emit_stats(statter, :workers_size, :working)
+
       send_worker_metrics
+
       Sidekiq::Queue.all.each do |queue|
         Statter.statsd.gauge("shared.sidekiq.#{queue.name}.size", queue.size)
         Statter.dogstatsd&.gauge('sidekiq.queue.size', queue.size, tags: dd_tags(queue))
@@ -61,6 +59,14 @@ module Sidekiq::Instrument
     def dd_tags(queue)
       ["queue:#{queue.name}"]
     end
+
+    def emit_stats(statter, method, stat)
+      stat ||= method
+
+      Statter.statsd.gauge("shared.sidekiq.stats.#{stat}", statter.send(method))
+      Statter.dogstatsd&.gauge("sidekiq.#{stat}", statter.send(method))
+    end
+    
 
     def send_worker_metrics
       return unless WorkerMetrics.enabled

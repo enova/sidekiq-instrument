@@ -2,6 +2,7 @@
 
 require 'sidekiq'
 require 'sidekiq/api'
+require 'ddtrace'
 
 module Sidekiq::Instrument
   class Worker
@@ -18,35 +19,42 @@ module Sidekiq::Instrument
     }.freeze
 
     def perform
-      info = Sidekiq::Stats.new
+      span = Datadog::Tracing.trace('sidekiq.job.perform', service: 'sidekiq', resource: self.class.to_s)
+      begin
+        info = Sidekiq::Stats.new
 
-      self.class::METRIC_NAMES.each do |method, stat|
-        stat ||= method
+        self.class::METRIC_NAMES.each do |method, stat|
+          stat ||= method
 
-        Statter.statsd.gauge("shared.sidekiq.stats.#{stat}", info.send(method))
-        Statter.dogstatsd&.gauge("sidekiq.#{stat}", info.send(method))
+          Statter.statsd.gauge("shared.sidekiq.stats.#{stat}", info.send(method))
+          Statter.dogstatsd&.gauge("sidekiq.#{stat}", info.send(method))
+        end
+
+        working = Sidekiq::Workers.new.count
+        Statter.statsd.gauge('shared.sidekiq.stats.working', working)
+        Statter.dogstatsd&.gauge('sidekiq.working', working)
+        send_worker_metrics
+        Sidekiq::Queue.all.each do |queue|
+          Statter.statsd.gauge("shared.sidekiq.#{queue.name}.size", queue.size)
+          Statter.dogstatsd&.gauge('sidekiq.queue.size', queue.size, tags: dd_tags(queue))
+
+          Statter.statsd.gauge("shared.sidekiq.#{queue.name}.latency", queue.latency)
+          Statter.dogstatsd&.gauge('sidekiq.queue.latency', queue.latency, tags: dd_tags(queue))
+        end
+      rescue StandardError => e
+        span.set_error(e)
+        raise e
+      ensure
+        span.finish
+        Statter.dogstatsd&.flush(sync: true)
       end
-
-      working = Sidekiq::Workers.new.count
-      Statter.statsd.gauge('shared.sidekiq.stats.working', working)
-      Statter.dogstatsd&.gauge('sidekiq.working', working)
-      send_worker_metrics
-      Sidekiq::Queue.all.each do |queue|
-        Statter.statsd.gauge("shared.sidekiq.#{queue.name}.size", queue.size)
-        Statter.dogstatsd&.gauge('sidekiq.queue.size', queue.size, tags: dd_tags(queue))
-
-        Statter.statsd.gauge("shared.sidekiq.#{queue.name}.latency", queue.latency)
-        Statter.dogstatsd&.gauge('sidekiq.queue.latency', queue.latency, tags: dd_tags(queue))
-      end
-
-      Statter.dogstatsd&.flush(sync: true)
     end
 
     private
 
     # @param [Sidekiq::Queue] queue used for stats emission
     # @return [Array<String>] an array of tags
-    # @example this method can be override to add more tags
+    # @example this method can be overridden to add more tags
     #   class MyStatsWorker < Sidekiq::Instrument::Worker
     #     private
     #

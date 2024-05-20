@@ -9,7 +9,7 @@ module Sidekiq::Instrument
     include Sidekiq::Instrument::MetricNames
 
     def call(worker, job, _queue, &block)
-      span = Datadog::Tracing.trace('sidekiq.job.dequeue', service: 'sidekiq', resource: job['class'])
+      span = Datadog::Tracing.trace('sidekiq.job.dequeue', resource: job['class'])
       begin
         Statter.statsd.increment(metric_name(worker, 'dequeue'))
         Statter.dogstatsd&.increment('sidekiq.dequeue', worker_dog_options(worker))

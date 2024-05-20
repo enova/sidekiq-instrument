@@ -19,7 +19,7 @@ module Sidekiq::Instrument
     }.freeze
 
     def perform
-      span = Datadog::Tracing.trace('sidekiq.job.perform', service: 'sidekiq', resource: self.class.to_s)
+      span = Datadog::Tracing.trace('sidekiq.job.perform', resource: self.class.to_s)
       begin
         info = Sidekiq::Stats.new
 

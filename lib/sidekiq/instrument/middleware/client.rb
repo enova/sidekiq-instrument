@@ -9,7 +9,7 @@ module Sidekiq::Instrument
     include Sidekiq::Instrument::MetricNames
 
     def call(worker_class, job, _queue, redis_pool)
-      span = Datadog::Tracing.trace('sidekiq.job.enqueue', resource: job['class'])
+      span = Datadog::Tracing.trace('sidekiq.job.enqueue', service: Datadog.configuration[:service], resource: job['class'])
       begin
         # worker_class is a const in sidekiq >= 6.x
         klass = Object.const_get(worker_class.to_s)

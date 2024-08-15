@@ -8,7 +8,6 @@ module Sidekiq::Instrument
     include Sidekiq::Instrument::MetricNames
 
     def call(worker_class, job, queue, redis_pool)
-      binding.pry
       Sidekiq.logger.info { "Running Worker: #{worker_class} ==== Sidekiq::Context.current[:class]: #{Sidekiq::Context.current[:class]}" }
 
       # worker_class is a const in sidekiq >= 6.x

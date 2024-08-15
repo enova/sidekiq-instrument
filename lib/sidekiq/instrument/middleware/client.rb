@@ -8,10 +8,14 @@ module Sidekiq::Instrument
     include Sidekiq::Instrument::MetricNames
 
     def call(worker_class, job, queue, redis_pool)
+      binding.pry
       Sidekiq.logger.info { "Running Worker: #{worker_class} ==== Sidekiq::Context.current[:class]: #{Sidekiq::Context.current[:class]}" }
+
       # worker_class is a const in sidekiq >= 6.x
       klass = Object.const_get(worker_class.to_s)
       class_instance = klass.new
+
+      Statter.dogstatsd&.increment('sidekiq.enqueue', worker_dog_options(class_instance))
 
       # This is needed because the ClientMiddleware is called twice for scheduled jobs
       # - Once when it gets scheduled
@@ -20,12 +24,13 @@ module Sidekiq::Instrument
       # Sidekiq::Context.current[:class] is only ever set when the job is scheduled
       if Sidekiq::Context.current[:class].present?
         Statter.statsd.increment(metric_name(class_instance, 'enqueue'))
-        Statter.dogstatsd&.increment('sidekiq.enqueue', worker_dog_options(class_instance))
-        Statter.dogstatsd&.flush(sync: true)
+        Statter.dogstatsd&.increment('sidekiq.filtered_enqueue', worker_dog_options(class_instance))
       end
 
       WorkerMetrics.trace_workers_increment_counter(klass.name.underscore, redis_pool)
-      yield
+      result = yield
+      Statter.dogstatsd&.flush(sync: true)
+      result
     end
   end
 end

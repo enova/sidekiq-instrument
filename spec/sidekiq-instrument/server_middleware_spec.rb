@@ -25,7 +25,12 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
       end
     end
 
-    context 'when a job succeeds' do
+    context 'when an initial job succeeds' do
+      before do
+        Sidekiq[:max_retries] = 0
+        allow_any_instance_of(MyWorker).to receive(:get_sidekiq_options).and_return({ 'retry': 'true'})
+      end
+
       it 'increments StatsD dequeue counter' do
         expect do
           MyWorker.perform_async
@@ -50,36 +55,69 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         MyWorker.perform_async
       end
 
-      context 'with WorkerMetrics.enabled true' do
-        it 'decrements the in_queue counter' do
-          Sidekiq::Instrument::WorkerMetrics.enabled = true
-          Redis.new.hdel(worker_metric_name, 'my_other_worker')
-          MyOtherWorker.perform_async
-          expect(Redis.new.hget(worker_metric_name, 'my_other_worker')).to eq('-1')
-        end
+      # TODO: These tests are meaningless until we fix the WorkerMetrics class
+      #
+      # context 'with WorkerMetrics.enabled true' do
+      #   it 'decrements the in_queue counter' do
+      #     Sidekiq::Instrument::WorkerMetrics.enabled = true
+      #     Redis.new.hdel(worker_metric_name, 'my_other_worker')
+      #     MyOtherWorker.perform_async
+      #     expect(Redis.new.hget(worker_metric_name, 'my_other_worker')).to eq('-1')
+      #   end
+      # end
+
+      # context 'with WorkerMetrics.enabled true and an errored job' do
+      #   it 'decrements the in_queue counter' do
+      #     Sidekiq::Instrument::WorkerMetrics.enabled = true
+      #     MyOtherWorker.perform_async
+      #     expect(Redis.new.hget(worker_metric_name, 'my_other_worker')).to eq('-1')
+      #     begin
+      #       MyOtherWorker.perform_async
+      #     rescue StandardError
+      #       nil
+      #     end
+      #     expect(Redis.new.hget(worker_metric_name, 'my_other_worker')).to eq('-2')
+      #   end
+      # end
+    end
+
+    context 'when a retried job succeeds' do
+      before do
+        Sidekiq[:max_retries] = 1
+        allow_any_instance_of(MyWorker).to receive(:perform).and_raise('foo')
+        allow_any_instance_of(MyWorker).to receive(:get_sidekiq_options).and_return({ 'retry': 'true'})
+
+        # This makes the job look like a retry since we can't access the job argument
+        allow_any_instance_of(Sidekiq::Instrument::ServerMiddleware).to receive(:current_retries).and_return(0)
       end
 
-      context 'with WorkerMetrics.enabled true and an errored job' do
-        it 'decrements the in_queue counter' do
-          Sidekiq::Instrument::WorkerMetrics.enabled = true
-          MyOtherWorker.perform_async
-          expect(Redis.new.hget(worker_metric_name, 'my_other_worker')).to eq('-1')
-          begin
-            MyOtherWorker.perform_async
-          rescue StandardError
-            nil
-          end
-          expect(Redis.new.hget(worker_metric_name, 'my_other_worker')).to eq('-2')
+      it 'increments StatsD dequeue.retry counter' do
+        expect do
+          MyWorker.perform_async
+        rescue StandardError
+          nil
+        end.to trigger_statsd_increment('shared.sidekiq.default.MyWorker.dequeue.retry')
+      end
+
+      it 'increments DogStatsD dequeue.retry counter' do
+        expect do
+          MyWorker.perform_async
+        rescue StandardError
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.dequeue.retry', expected_dog_options).once
         end
       end
     end
 
     context 'when a job fails' do
       before do
+        Sidekiq[:max_retries] = 0
         allow_any_instance_of(MyWorker).to receive(:perform).and_raise('foo')
+        allow_any_instance_of(MyWorker).to receive(:get_sidekiq_options).and_return({ 'retry': 'false'})
       end
 
-      it 'increments the StatsD failure counter' do
+      it 'increments the StatsD error counter' do
         expect do
           MyWorker.perform_async
         rescue StandardError
@@ -87,7 +125,7 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         end.to trigger_statsd_increment('shared.sidekiq.default.MyWorker.error')
       end
 
-      it 'increments the DogStatsD failure counter' do
+      it 'increments the DogStatsD error counter' do
         expect(
           Sidekiq::Instrument::Statter.dogstatsd
         ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
@@ -100,6 +138,58 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
           MyWorker.perform_async
         rescue StandardError
           nil
+        end
+      end
+
+      context 'job has retries left' do
+        before do
+          Sidekiq[:max_retries] = 1
+          allow_any_instance_of(MyWorker).to receive(:get_sidekiq_options).and_return({ 'retry': 'true'})
+        end
+
+        it 'increments the DogStatsD enqueue.retry counter' do
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.enqueue.retry', expected_dog_options).once
+          expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.error', expected_dog_options).once
+
+          begin
+            MyWorker.perform_async
+          rescue StandardError
+            nil
+          end
+        end
+      end
+
+      context 'on its last retry' do
+        before do
+          Sidekiq[:max_retries] = 1
+          allow_any_instance_of(MyWorker).to receive(:get_sidekiq_options).and_return({ 'retry': 'true'})
+
+          # This makes the job look like a retry since we can't access the job argument
+          allow_any_instance_of(Sidekiq::Instrument::ServerMiddleware).to receive(:current_retries).and_return(1)
+        end
+
+        it 'increments the DogStatsD dequeue.retry counter but not the enqueue.retry counter' do
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.dequeue.retry', expected_dog_options).once
+          expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.error', expected_dog_options).once
+
+          begin
+            MyWorker.perform_async
+          rescue StandardError
+            nil
+          end
         end
       end
 

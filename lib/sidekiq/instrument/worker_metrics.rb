@@ -10,7 +10,7 @@ module Sidekiq
       class_attribute :enabled, :namespace
 
       class << self
-        def trace_workers_increment_counter(klass_name, sidekiq_redis_pool_user)
+        def trace_workers_increment_counter(klass_name)
           return unless enabled?
 
           Sidekiq.redis do |redis|

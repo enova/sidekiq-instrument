@@ -12,6 +12,13 @@ module Sidekiq::Instrument
       { tags: ["queue:#{queue_name(worker)}", "worker:#{underscore(class_name(worker))}"] }
     end
 
+    def max_retries(worker)
+      retries = worker.class.get_sidekiq_options['retry'] || Sidekiq[:max_retries]
+      return Sidekiq[:max_retries] if retries.to_s.eql?("true")
+      return 0 if retries.eql?("false")
+      retries
+    end
+
     private
 
     def queue_name(worker)

@@ -31,15 +31,15 @@ module Sidekiq::Instrument
       WorkerMetrics.trace_workers_decrement_counter(worker.class.to_s.underscore)
       Statter.dogstatsd&.flush(sync: true)
     end
-  end
 
-  private
+    private
 
-  def current_retries(job)
-    job["redis_throttler_params"]["retry_count"]
-  end
-
-  def is_retry(job)
-    current_retries(job) > 0
+    def current_retries(job)
+      job["redis_throttler_params"]["retry_count"]
+    end
+  
+    def is_retry(job)
+      current_retries(job) > 0
+    end
   end
 end

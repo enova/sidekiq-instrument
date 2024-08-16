@@ -7,7 +7,7 @@ module Sidekiq::Instrument
   class ClientMiddleware
     include Sidekiq::Instrument::MetricNames
 
-    def call(worker_class, job, queue, redis_pool)
+    def call(worker_class, job, queue, _redis_pool)
       # worker_class is a const in sidekiq >= 6.x
       klass = Object.const_get(worker_class.to_s)
       class_instance = klass.new
@@ -18,7 +18,7 @@ module Sidekiq::Instrument
       # We only want to increment the enqueue metric when the job is scheduled and
       # Sidekiq::Context.current[:class] is only ever set when the job is scheduled
       if Sidekiq::Context.current[:class].present?
-        WorkerMetrics.trace_workers_increment_counter(klass.name.underscore, redis_pool)
+        WorkerMetrics.trace_workers_increment_counter(klass.name.underscore)
         Statter.statsd.increment(metric_name(class_instance, 'enqueue'))
         Statter.dogstatsd&.increment('sidekiq.enqueue', worker_dog_options(class_instance))
       end

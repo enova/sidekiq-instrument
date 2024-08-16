@@ -21,7 +21,7 @@ module Sidekiq::Instrument
       # if we have retries left, increment the enqueue.retry counter to indicate the job is going back on the queue
       if max_retries(worker) > current_retries(job)
         WorkerMetrics.trace_workers_increment_counter(klass.name.underscore, redis_pool)
-        Statter.dogstatsd&.increment('sidekiq.enqueue.retry', worker_dog_options(worker)) unless current_retries(job) == max_retries(worker) # dont increment for last retry
+        Statter.dogstatsd&.increment('sidekiq.enqueue.retry', worker_dog_options(worker))
       end
 
       Statter.statsd.increment(metric_name(worker, 'error'))

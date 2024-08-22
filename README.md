@@ -84,6 +84,12 @@ For each job, the following metrics will be reported:
 4. **shared.sidekiq._queue_._job_.error**: counter incremented each time a
    job fails.
 
+For job retry attempts, the above 4 metrics will still be reported but the enqueue/dequeue metrics
+will have a `.retry` appended:
+
+1. **shared.sidekiq._queue_._job_.enqueue.retry**
+2. **shared.sidekiq._queue_._job_.dequeue.retry**
+
 The metric names can be changed by overriding the `statsd_metric_name`
 method in your worker classes.
 
@@ -92,7 +98,7 @@ For each queue, the following metrics will be reported:
 2. **shared.sidekiq._queue_.latency**: gauge of how long the oldest job has been in the queue
 
 For each worker, the following metrics and tags will be reported:
-1. **sidekiq.worker_metrics.in_queue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement
+1. **sidekiq.worker_metrics.in_queue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement (**this metric is currently inaccurate**)
 
 ## DogStatsD Keys
 For each job, the following metrics and tags will be reported:
@@ -106,14 +112,23 @@ For each job, the following metrics and tags will be reported:
 4. **sidekiq.error (tags: {queue: _queue_, worker: _job_})**: counter incremented each time a
    job fails.
 
+For job retry attempts, the above 4 metrics will still be reported but the enqueue/dequeue metrics
+will have a `.retry` appended:
+
+1. **sidekiq.enqueue.retry (tags: {queue: _queue_, worker: _job_})**
+2. **sidekiq.dequeue.retry (tags: {queue: _queue_, worker: _job_})**
+
 For each queue, the following metrics and tags will be reported:
 1. **sidekiq.queue.size (tags: {queue: _queue_})**: gauge of how many jobs are in the queue
 2. **sidekiq.queue.latency (tags: {queue: _queue_})**: gauge of how long the oldest job has been in the queue
 
 For each worker, the following metrics and tags will be reported:
-1. **sidekiq.worker_metrics.in_queue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement
+1. **sidekiq.worker_metrics.in_queue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement (**this metric is currently inaccurate**)
 
 ## Worker
+
+**WARNING: The metrics reported by this Worker are currently inaccurate.**
+
 There is a worker, `Sidekiq::Instrument::Worker`, that submits gauges
 for various interesting statistics; namely, the bulk of the information in `Sidekiq::Stats`
 and the sizes of each individual queue. While the worker class is a fully valid Sidekiq worker,

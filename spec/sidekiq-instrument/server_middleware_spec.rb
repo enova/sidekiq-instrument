@@ -28,7 +28,6 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
     context 'when an initial job succeeds' do
       before do
         Sidekiq[:max_retries] = 0
-        allow_any_instance_of(MyWorker).to receive(:get_sidekiq_options).and_return({ 'retry': 'true'})
       end
 
       it 'increments StatsD dequeue counter' do
@@ -85,7 +84,6 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
       before do
         Sidekiq[:max_retries] = 1
         allow_any_instance_of(MyWorker).to receive(:perform).and_raise('foo')
-        allow_any_instance_of(MyWorker).to receive(:get_sidekiq_options).and_return({ 'retry': 'true'})
 
         # This makes the job look like a retry since we can't access the job argument
         allow_any_instance_of(Sidekiq::Instrument::ServerMiddleware).to receive(:current_retries).and_return(0)
@@ -114,7 +112,6 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
       before do
         Sidekiq[:max_retries] = 0
         allow_any_instance_of(MyWorker).to receive(:perform).and_raise('foo')
-        allow_any_instance_of(MyWorker).to receive(:get_sidekiq_options).and_return({ 'retry': 'false'})
       end
 
       it 'increments the StatsD error counter' do
@@ -141,36 +138,79 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         end
       end
 
-      context 'job has retries left' do
-        before do
-          Sidekiq[:max_retries] = 1
-          allow_any_instance_of(MyWorker).to receive(:get_sidekiq_options).and_return({ 'retry': 'true'})
-        end
+      context 'when the worker has retries disabled' do
+        shared_examples 'it does not attempt to track retries' do |retry_value|
+          before do
+            Sidekiq[:max_retries] = 1
+            allow(MyWorker).to receive(:get_sidekiq_options).and_return({ "retry" => retry_value, "queue" => 'default' })
+          end
 
-        it 'increments the DogStatsD enqueue.retry counter' do
-          expect(
-            Sidekiq::Instrument::Statter.dogstatsd
-          ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
-          expect(
-            Sidekiq::Instrument::Statter.dogstatsd
-          ).to receive(:increment).with('sidekiq.enqueue.retry', expected_dog_options).once
-          expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
-          expect(
-            Sidekiq::Instrument::Statter.dogstatsd
-          ).to receive(:increment).with('sidekiq.error', expected_dog_options).once
+          it 'does not increment the DogStatsD enqueue.retry counter' do
+            expect(
+              Sidekiq::Instrument::Statter.dogstatsd
+            ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
+            expect(
+              Sidekiq::Instrument::Statter.dogstatsd
+            ).not_to receive(:increment).with('sidekiq.enqueue.retry', expected_dog_options)
+            expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
+            expect(
+              Sidekiq::Instrument::Statter.dogstatsd
+            ).to receive(:increment).with('sidekiq.error', expected_dog_options).once
 
-          begin
-            MyWorker.perform_async
-          rescue StandardError
-            nil
+            begin
+              MyWorker.perform_async
+            rescue StandardError
+              nil
+            end
           end
         end
+
+        it_behaves_like 'it does not attempt to track retries', false
+
+        it_behaves_like 'it does not attempt to track retries', 'false'
+
+        it_behaves_like 'it does not attempt to track retries', 0
       end
 
-      context 'on its last retry' do
+      context 'when the current job has retries left to attempt' do
+        shared_examples 'it tracks the retries with DogStatsD' do |retry_value|
+          before do
+            Sidekiq[:max_retries] = 2
+            allow(MyWorker).to receive(:get_sidekiq_options).and_return({ "retry" => retry_value, "queue" => 'default' })
+          end
+
+          it 'increments the DogStatsD enqueue.retry counter' do
+            expect(
+              Sidekiq::Instrument::Statter.dogstatsd
+            ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
+            expect(
+              Sidekiq::Instrument::Statter.dogstatsd
+            ).to receive(:increment).with('sidekiq.enqueue.retry', expected_dog_options).once
+            expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
+            expect(
+              Sidekiq::Instrument::Statter.dogstatsd
+            ).to receive(:increment).with('sidekiq.error', expected_dog_options).once
+
+            begin
+              MyWorker.perform_async
+            rescue StandardError
+              nil
+            end
+          end
+        end
+
+        it_behaves_like 'it tracks the retries with DogStatsD', 'true'
+
+        it_behaves_like 'it tracks the retries with DogStatsD', true
+
+        it_behaves_like 'it tracks the retries with DogStatsD', 5
+
+        it_behaves_like 'it tracks the retries with DogStatsD', nil
+      end
+
+      context 'when the job is on its last retry attempt' do
         before do
           Sidekiq[:max_retries] = 1
-          allow_any_instance_of(MyWorker).to receive(:get_sidekiq_options).and_return({ 'retry': 'true'})
 
           # This makes the job look like a retry since we can't access the job argument
           allow_any_instance_of(Sidekiq::Instrument::ServerMiddleware).to receive(:current_retries).and_return(1)

@@ -13,10 +13,15 @@ module Sidekiq::Instrument
     end
 
     def max_retries(worker)
-      retries = worker.class.get_sidekiq_options['retry'] || Sidekiq[:max_retries]
-      return Sidekiq[:max_retries] if retries.to_s.eql?("true")
-      return 0 if retries.eql?("false")
-      retries
+      retries = fetch_worker_retry(worker)
+      case retries.to_s
+      when "true", ""
+        Sidekiq[:max_retries]
+      when "false"
+        0
+      else
+        retries
+      end
     end
 
     private
@@ -27,6 +32,10 @@ module Sidekiq::Instrument
 
     def class_name(worker)
       worker.class.name.gsub('::', '_')
+    end
+
+    def fetch_worker_retry(worker)
+      worker.class.get_sidekiq_options['retry']
     end
 
     def underscore(string)

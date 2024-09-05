@@ -138,14 +138,14 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         end
       end
 
-      context 'the worker has retries disabled' do
+      context 'when the worker has retries disabled' do
         shared_examples 'it does not attempt to track retries' do |retry_value|
           before do
             Sidekiq[:max_retries] = 1
             allow(MyWorker).to receive(:get_sidekiq_options).and_return({ "retry" => retry_value, "queue" => 'default' })
           end
 
-          it 'does not increments the DogStatsD enqueue.retry counter' do
+          it 'does not increment the DogStatsD enqueue.retry counter' do
             expect(
               Sidekiq::Instrument::Statter.dogstatsd
             ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
@@ -172,14 +172,14 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         it_behaves_like 'it does not attempt to track retries', 0
       end
 
-      context 'the current job has retries left to attempt' do
+      context 'when the current job has retries left to attempt' do
         shared_examples 'it tracks the retries with DogStatsD' do |retry_value|
           before do
             Sidekiq[:max_retries] = 2
             allow(MyWorker).to receive(:get_sidekiq_options).and_return({ "retry" => retry_value, "queue" => 'default' })
           end
 
-          it 'does not increments the DogStatsD enqueue.retry counter' do
+          it 'increments the DogStatsD enqueue.retry counter' do
             expect(
               Sidekiq::Instrument::Statter.dogstatsd
             ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
@@ -208,7 +208,7 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         it_behaves_like 'it tracks the retries with DogStatsD', nil
       end
 
-      context 'the job is on its last retry attempt' do
+      context 'when the job is on its last retry attempt' do
         before do
           Sidekiq[:max_retries] = 1
 

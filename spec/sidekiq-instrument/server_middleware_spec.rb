@@ -5,6 +5,8 @@ require 'sidekiq/instrument/middleware/server'
 RSpec.describe Sidekiq::Instrument::ServerMiddleware do
   describe '#call' do
     let(:expected_dog_options) { { tags: ['queue:default', 'worker:my_worker'] } }
+    let(:expected_error_dog_options) { { tags: ['queue:default', 'worker:my_worker', 'error:RuntimeError'] } }
+
     let(:worker_metric_name) do
       'sidekiq_instrument_trace_workers::in_queue'
     end
@@ -83,7 +85,7 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
     context 'when a retried job succeeds' do
       before do
         Sidekiq[:max_retries] = 1
-        allow_any_instance_of(MyWorker).to receive(:perform).and_raise('foo')
+        allow_any_instance_of(MyWorker).to receive(:perform).and_raise(RuntimeError.new('foo'))
 
         # This makes the job look like a retry since we can't access the job argument
         allow_any_instance_of(Sidekiq::Instrument::ServerMiddleware).to receive(:current_retries).and_return(0)
@@ -111,7 +113,7 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
     context 'when a job fails' do
       before do
         Sidekiq[:max_retries] = 0
-        allow_any_instance_of(MyWorker).to receive(:perform).and_raise('foo')
+        allow_any_instance_of(MyWorker).to receive(:perform).and_raise(RuntimeError.new('foo'))
       end
 
       it 'increments the StatsD error counter' do
@@ -129,7 +131,7 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
         expect(
           Sidekiq::Instrument::Statter.dogstatsd
-        ).to receive(:increment).with('sidekiq.error', expected_dog_options).once
+        ).to receive(:increment).with('sidekiq.error', expected_error_dog_options).once
 
         begin
           MyWorker.perform_async
@@ -151,11 +153,11 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
             ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
             expect(
               Sidekiq::Instrument::Statter.dogstatsd
-            ).not_to receive(:increment).with('sidekiq.enqueue.retry', expected_dog_options)
+            ).not_to receive(:increment).with('sidekiq.enqueue.retry', expected_error_dog_options)
             expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
             expect(
               Sidekiq::Instrument::Statter.dogstatsd
-            ).to receive(:increment).with('sidekiq.error', expected_dog_options).once
+            ).to receive(:increment).with('sidekiq.error', expected_error_dog_options).once
 
             begin
               MyWorker.perform_async
@@ -185,11 +187,11 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
             ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
             expect(
               Sidekiq::Instrument::Statter.dogstatsd
-            ).to receive(:increment).with('sidekiq.enqueue.retry', expected_dog_options).once
+            ).to receive(:increment).with('sidekiq.enqueue.retry', expected_error_dog_options).once
             expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
             expect(
               Sidekiq::Instrument::Statter.dogstatsd
-            ).to receive(:increment).with('sidekiq.error', expected_dog_options).once
+            ).to receive(:increment).with('sidekiq.error', expected_error_dog_options).once
 
             begin
               MyWorker.perform_async
@@ -223,7 +225,38 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
           expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
           expect(
             Sidekiq::Instrument::Statter.dogstatsd
-          ).to receive(:increment).with('sidekiq.error', expected_dog_options).once
+          ).to receive(:increment).with('sidekiq.error', expected_error_dog_options).once
+
+          begin
+            MyWorker.perform_async
+          rescue StandardError
+            nil
+          end
+        end
+      end
+
+      context 'when the error is RedisRateLimit::Throttle::LockFailedError' do
+        let(:expected_lock_error_dog_options) { { tags: ['queue:default', 'worker:my_worker', 'error:RedisRateLimit::Throttle::LockFailedError'] } }
+        let(:lock_error) { RuntimeError.new('foo') }
+
+        before do
+          # force the error's class name to be the RedisRateLimit error type string
+          # it's an external error class and we can't actually create an instance of the error
+          allow(lock_error).to receive_message_chain(:class, :name).and_return("RedisRateLimit::Throttle::LockFailedError")
+          allow_any_instance_of(MyWorker).to receive(:perform).and_raise(lock_error)
+        end
+
+        it 'increments the DogStatsD sidekiq.error.redis_rate_lock counter' do
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).not_to receive(:increment).with('sidekiq.enqueue.retry', expected_lock_error_dog_options)
+          expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.error.redis_rate_lock', expected_lock_error_dog_options).once
 
           begin
             MyWorker.perform_async

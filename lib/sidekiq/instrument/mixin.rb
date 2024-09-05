@@ -15,12 +15,10 @@ module Sidekiq::Instrument
     def max_retries(worker)
       retries = fetch_worker_retry(worker)
       case retries.to_s
-      when "true"
+      when "true", ""
         Sidekiq[:max_retries]
       when "false"
         0
-      when ""
-        Sidekiq[:max_retries]
       else
         retries
       end

@@ -27,9 +27,7 @@ module Sidekiq::Instrument
         Statter.dogstatsd&.increment('sidekiq.enqueue.retry', dd_options)
       end
 
-      # categorize rate limit lock errors differently from actual errors
-      error_string = e.class.name.eql?("RedisRateLimit::Throttle::LockFailedError") ? 'sidekiq.error.redis_rate_lock' : 'sidekiq.error'
-      Statter.dogstatsd&.increment(error_string, dd_options)
+      Statter.dogstatsd&.increment('sidekiq.error', dd_options)
       Statter.statsd.increment(metric_name(worker, 'error'))
 
       raise e

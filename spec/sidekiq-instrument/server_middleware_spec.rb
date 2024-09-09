@@ -235,37 +235,6 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         end
       end
 
-      context 'when the error is RedisRateLimit::Throttle::LockFailedError' do
-        let(:expected_lock_error_dog_options) { { tags: ['queue:default', 'worker:my_worker', 'error:RedisRateLimit::Throttle::LockFailedError'] } }
-        let(:lock_error) { RuntimeError.new('foo') }
-
-        before do
-          # force the error's class name to be the RedisRateLimit error type string
-          # it's an external error class and we can't actually create an instance of the error
-          allow(lock_error).to receive_message_chain(:class, :name).and_return("RedisRateLimit::Throttle::LockFailedError")
-          allow_any_instance_of(MyWorker).to receive(:perform).and_raise(lock_error)
-        end
-
-        it 'increments the DogStatsD sidekiq.error.redis_rate_lock counter' do
-          expect(
-            Sidekiq::Instrument::Statter.dogstatsd
-          ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
-          expect(
-            Sidekiq::Instrument::Statter.dogstatsd
-          ).not_to receive(:increment).with('sidekiq.enqueue.retry', expected_lock_error_dog_options)
-          expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
-          expect(
-            Sidekiq::Instrument::Statter.dogstatsd
-          ).to receive(:increment).with('sidekiq.error.redis_rate_lock', expected_lock_error_dog_options).once
-
-          begin
-            MyWorker.perform_async
-          rescue StandardError
-            nil
-          end
-        end
-      end
-
       it 're-raises the error' do
         expect { MyWorker.perform_async }.to raise_error 'foo'
       end

@@ -15,8 +15,8 @@ module Sidekiq::Instrument
       start_time = Time.now
       yield block
       execution_time_ms = (Time.now - start_time) * 1000
-      Statter.statsd.measure(metric_name(worker, 'runtime'), execution_time_ms)
       Statter.dogstatsd&.timing('sidekiq.runtime', execution_time_ms, worker_dog_options(worker))
+      Statter.statsd.measure(metric_name(worker, 'runtime'), execution_time_ms)
     rescue Exception => e
       dd_options = worker_dog_options(worker)
       dd_options[:tags] << "error:#{e.class.name}"

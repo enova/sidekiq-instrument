@@ -20,7 +20,7 @@ module Sidekiq::Instrument
       if Sidekiq::Context.current[:class].present?
         WorkerMetrics.trace_workers_increment_counter(klass.name.underscore)
         Statter.statsd.increment(metric_name(class_instance, 'enqueue'))
-        Statter.dogstatsd&.increment('sidekiq.enqueue', worker_dog_options(class_instance))
+        Statter.dogstatsd&.increment('sidekiq.enqueue', worker_dog_options(class_instance, job))
       end
 
       Statter.dogstatsd&.flush(sync: true)

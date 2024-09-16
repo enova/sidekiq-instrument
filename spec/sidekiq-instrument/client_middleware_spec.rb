@@ -46,6 +46,17 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
           ).to receive(:increment).with('sidekiq.enqueue', { tags: ['queue:default', 'worker:my_worker'] }).once
           MyWorker.perform_async
         end
+
+        context 'with additional tag(s)' do
+          it 'increments DogStatsD enqueue counter with additional tag(s)' do
+            tag = 'test_worker'
+
+            expect(
+              Sidekiq::Instrument::Statter.dogstatsd
+            ).to receive(:increment).with('sidekiq.enqueue', { tags: ['queue:default', 'worker:my_worker', tag] }).once
+            MyWorker.set(tags: [tag]).perform_async
+          end
+        end
       end
 
       context 'with statsd_metric_name' do

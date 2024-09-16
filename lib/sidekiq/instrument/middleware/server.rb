@@ -9,16 +9,16 @@ module Sidekiq::Instrument
 
     def call(worker, job, _queue, &block)
       dequeue_string = is_retry(job) ? 'dequeue.retry' : 'dequeue'
-      Statter.dogstatsd&.increment("sidekiq.#{dequeue_string}", worker_dog_options(worker))
+      Statter.dogstatsd&.increment("sidekiq.#{dequeue_string}", worker_dog_options(worker, job))
       Statter.statsd.increment(metric_name(worker, dequeue_string))
 
       start_time = Time.now
       yield block
       execution_time_ms = (Time.now - start_time) * 1000
-      Statter.dogstatsd&.timing('sidekiq.runtime', execution_time_ms, worker_dog_options(worker))
+      Statter.dogstatsd&.timing('sidekiq.runtime', execution_time_ms, worker_dog_options(worker, job))
       Statter.statsd.measure(metric_name(worker, 'runtime'), execution_time_ms)
     rescue Exception => e
-      dd_options = worker_dog_options(worker)
+      dd_options = worker_dog_options(worker, job)
       dd_options[:tags] << "error:#{e.class.name}"
 
       # if we have retries left, increment the enqueue.retry counter to indicate the job is going back on the queue

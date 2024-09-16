@@ -9,12 +9,11 @@ module Sidekiq::Instrument
     end
 
     def worker_dog_options(worker, job)
-      tags = job.dig('tags') || []
       {
         tags: [
           "queue:#{queue_name(worker)}",
           "worker:#{underscore(class_name(worker))}"
-        ].concat(tags)
+        ].concat(job.fetch('tags', []))
       }
     end
 

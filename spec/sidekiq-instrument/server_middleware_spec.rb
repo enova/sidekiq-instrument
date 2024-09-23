@@ -56,6 +56,18 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         MyWorker.perform_async
       end
 
+      context 'with additional tag(s)' do
+        let(:tag) { 'test_worker' }
+        let(:expected_dog_options) { { tags: ['queue:default', 'worker:my_worker', tag] } }
+
+        it 'increments DogStatsD dequeue counter with additional tag(s)' do
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
+          MyWorker.set(tags: [tag]).perform_async
+        end
+      end
+
       # TODO: These tests are meaningless until we fix the WorkerMetrics class
       #
       # context 'with WorkerMetrics.enabled true' do
@@ -137,6 +149,28 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
           MyWorker.perform_async
         rescue StandardError
           nil
+        end
+      end
+
+      context 'with additional tag(s)' do
+        let(:tag) { 'test_worker' }
+        let(:expected_dog_options) { { tags: ['queue:default', 'worker:my_worker', tag] } }
+        let(:expected_error_dog_options) { { tags: ['queue:default', 'worker:my_worker', tag, 'error:RuntimeError'] } }
+
+        it 'increments DogStatsD dequeue counter with additional tag(s)' do
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
+          expect(Sidekiq::Instrument::Statter.dogstatsd).not_to receive(:time)
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.error', expected_error_dog_options).once
+
+          begin
+            MyWorker.set(tags: [tag]).perform_async
+          rescue StandardError
+            nil
+          end
         end
       end
 

@@ -8,8 +8,13 @@ module Sidekiq::Instrument
       end
     end
 
-    def worker_dog_options(worker)
-      { tags: ["queue:#{queue_name(worker)}", "worker:#{underscore(class_name(worker))}"] }
+    def worker_dog_options(worker, job)
+      {
+        tags: [
+          "queue:#{queue_name(worker)}",
+          "worker:#{underscore(class_name(worker))}"
+        ].concat(job.fetch('tags', []))
+      }
     end
 
     def max_retries(worker)

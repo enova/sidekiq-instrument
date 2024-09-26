@@ -75,16 +75,18 @@ Sidekiq::Instrument::WorkerMetrics.namespace = <APP_NAME>
 ## StatsD Keys
 For each job, the following metrics will be reported:
 
-1. **shared.sidekiq._queue_._job_.enqueue**: counter incremented each time a
+1. **shared.sidekiq._queue_._job_.schedule**: counter incremented each time a
+   job is scheduled to be pushed onto the queue later.
+2. **shared.sidekiq._queue_._job_.enqueue**: counter incremented each time a
    job is pushed onto the queue.
-2. **shared.sidekiq._queue_._job_.dequeue**: counter incremented just before
+3. **shared.sidekiq._queue_._job_.dequeue**: counter incremented just before
    worker begins performing a job.
-3. **shared.sidekiq._queue_._job_.runtime**: timer of the total time spent
+4. **shared.sidekiq._queue_._job_.runtime**: timer of the total time spent
    in `perform`, in milliseconds.
-4. **shared.sidekiq._queue_._job_.error**: counter incremented each time a
+5. **shared.sidekiq._queue_._job_.error**: counter incremented each time a
    job fails.
 
-For job retry attempts, the above 4 metrics will still be reported but the enqueue/dequeue metrics
+For job retry attempts, metrics 2-5 will still be reported but the enqueue/dequeue metrics
 will have a `.retry` appended:
 
 1. **shared.sidekiq._queue_._job_.enqueue.retry**
@@ -103,13 +105,15 @@ For each worker, the following metrics and tags will be reported:
 ## DogStatsD Keys
 For each job, the following metrics and tags will be reported:
 
-1. **sidekiq.enqueue (tags: {queue: _queue_, worker: _job_})**: counter incremented each time a
+1. **sidekiq.schedule (tags: {queue: _queue_, worker: _job_})**: counter incremented each time a
+   job is scheduled to be pushed onto the queue later.
+2. **sidekiq.enqueue (tags: {queue: _queue_, worker: _job_})**: counter incremented each time a
    job is pushed onto the queue.
-2. **sidekiq.dequeue (tags: {queue: _queue_, worker: _job_})**: counter incremented just before
+3. **sidekiq.dequeue (tags: {queue: _queue_, worker: _job_})**: counter incremented just before
    worker begins performing a job.
-3. **sidekiq.runtime (tags: {queue: _queue_, worker: _job_})**: timer of the total time spent
+4. **sidekiq.runtime (tags: {queue: _queue_, worker: _job_})**: timer of the total time spent
    in `perform`, in milliseconds.
-4. **sidekiq.error (tags: {queue: _queue_, worker: _job_})**: counter incremented each time a
+5. **sidekiq.error (tags: {queue: _queue_, worker: _job_, error: _errorclass_})**: counter incremented each time a
    job fails.
 
 For job retry attempts, the above 4 metrics will still be reported but the enqueue/dequeue metrics
@@ -127,7 +131,7 @@ For each worker, the following metrics and tags will be reported:
 
 ## Worker
 
-**WARNING: The metrics reported by this Worker are currently inaccurate.**
+**WARNING: The Redis count metrics reported by this Worker are currently inaccurate.**
 
 There is a worker, `Sidekiq::Instrument::Worker`, that submits gauges
 for various interesting statistics; namely, the bulk of the information in `Sidekiq::Stats`

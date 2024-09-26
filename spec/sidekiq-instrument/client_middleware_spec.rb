@@ -28,11 +28,7 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
       end
     end
 
-    context 'with Sidekiq::Context.current[:class] (job being enqueued)' do
-      before do
-        Sidekiq::Context.current[:class] = 'MyWorker'
-      end
-
+    context 'with nil job["at"] (perform_async)' do
       context 'without statsd_metric_name' do
         it 'increments the StatsD enqueue counter' do
           expect do
@@ -93,36 +89,53 @@ RSpec.describe Sidekiq::Instrument::ClientMiddleware do
       end
     end
 
-    context 'without the Sidekiq::Context.current[:class] (job being dequeued)' do
-      before do
-        Sidekiq::Context.current[:class] = nil
-      end
-
-      it 'does not increment the StatsD enqueue counter' do
-        expect do
-          MyWorker.perform_async
-        end.not_to trigger_statsd_increment('shared.sidekiq.default.MyWorker.enqueue')
-      end
-
-      it 'does not increment the DogStatsD enqueue counter' do
-        expect(
-          Sidekiq::Instrument::Statter.dogstatsd
-        ).not_to receive(:increment).with('sidekiq.enqueue', { tags: ['queue:default', 'worker:my_worker'] })
-        MyWorker.perform_async
-      end
-
-      context 'with WorkerMetrics.enabled true' do
-        before do
-          Redis.new.flushall
-          Redis.new.hset(worker_metric_name, 'my_other_worker', 0)
+    context 'with job["at"] (perform_in)' do
+      context 'without statsd_metric_name' do
+        it 'increments the StatsD schedule counter' do
+          expect do
+            MyWorker.perform_in(1)
+          end.to trigger_statsd_increment('shared.sidekiq.default.MyWorker.schedule')
         end
 
-        it 'does not increment the in_queue counter' do
-          Sidekiq::Instrument::WorkerMetrics.enabled = true
-          MyOtherWorker.perform_async
-          expect(Redis.new.hget(worker_metric_name, 'my_other_worker')).to eq('0')
-          MyOtherWorker.perform_async
-          expect(Redis.new.hget(worker_metric_name, 'my_other_worker')).to eq('0')
+        it 'increments the DogStatsD schedule counter' do
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.schedule', { tags: ['queue:default', 'worker:my_worker'] }).once
+          MyWorker.perform_in(1)
+        end
+
+        context 'with additional tag(s)' do
+          it 'increments DogStatsD schedule counter with additional tag(s)' do
+            tag = 'test_worker'
+
+            expect(
+              Sidekiq::Instrument::Statter.dogstatsd
+            ).to receive(:increment).with('sidekiq.schedule', { tags: ['queue:default', 'worker:my_worker', tag] }).once
+            MyWorker.set(tags: [tag]).perform_in(1)
+          end
+        end
+      end
+
+      context 'with statsd_metric_name' do
+        it 'increments the schedule counter' do
+          expect do
+            MyOtherWorker.perform_in(1)
+          end.to trigger_statsd_increment('my_other_worker.schedule')
+        end
+      end
+
+      context 'without optional DogStatsD client' do
+        before do
+          @tmp = Sidekiq::Instrument::Statter.dogstatsd
+          Sidekiq::Instrument::Statter.dogstatsd = nil
+        end
+
+        after do
+          Sidekiq::Instrument::Statter.dogstatsd = @tmp
+        end
+
+        it 'does not error' do
+          expect { MyWorker.perform_in(1) }.not_to raise_error
         end
       end
     end

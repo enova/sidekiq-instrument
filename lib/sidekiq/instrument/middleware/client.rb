@@ -12,12 +12,18 @@ module Sidekiq::Instrument
       klass = Object.const_get(worker_class.to_s)
       class_instance = klass.new
 
-      # This is needed because the ClientMiddleware is called twice for scheduled jobs
-      # - Once when it gets scheduled
-      # - Once when it gets dequeued for processing
-      # We only want to increment the enqueue metric when the job is scheduled and
-      # Sidekiq::Context.current[:class] is only ever set when the job is scheduled
-      if Sidekiq::Context.current[:class].present?
+      # Depending on the type of perform called, this method can be hit either
+      # once or twice for the same Job ID.
+      #
+      # perform_async:
+      #   - once when it is enqueued, with no job['at'] key
+      # perform_in:
+      #   - once when it is scheduled, with job['at'] key
+      #   - once when it is enqueued, without job['at'] key
+      if job['at'].present?
+        Statter.statsd.increment(metric_name(class_instance, 'schedule'))
+        Statter.dogstatsd&.increment('sidekiq.schedule', worker_dog_options(class_instance, job))
+      else
         WorkerMetrics.trace_workers_increment_counter(klass.name.underscore)
         Statter.statsd.increment(metric_name(class_instance, 'enqueue'))
         Statter.dogstatsd&.increment('sidekiq.enqueue', worker_dog_options(class_instance, job))

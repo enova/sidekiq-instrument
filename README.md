@@ -81,9 +81,10 @@ For each job, the following metrics will be reported:
    job is pushed onto the queue.
 3. **shared.sidekiq._queue_._job_.dequeue**: counter incremented just before
    worker begins performing a job.
-4. **shared.sidekiq._queue_._job_.runtime**: timer of the total time spent
+4. **shared.sidekiq._queue_._job_.success**: counter incremented each time a job succeeds.
+5. **shared.sidekiq._queue_._job_.runtime**: timer of the total time spent
    in `perform`, in milliseconds.
-5. **shared.sidekiq._queue_._job_.error**: counter incremented each time a
+6. **shared.sidekiq._queue_._job_.error**: counter incremented each time a
    job fails.
 
 For job retry attempts, metrics 2-5 will still be reported but the enqueue/dequeue metrics
@@ -111,9 +112,10 @@ For each job, the following metrics and tags will be reported:
    job is pushed onto the queue.
 3. **sidekiq.dequeue (tags: {queue: _queue_, worker: _job_})**: counter incremented just before
    worker begins performing a job.
-4. **sidekiq.runtime (tags: {queue: _queue_, worker: _job_})**: timer of the total time spent
+4. **sidekiq.success (tags: {queue: _queue_, worker: _job_})**: counter incremented each time a job succeeds.
+5. **sidekiq.runtime (tags: {queue: _queue_, worker: _job_})**: timer of the total time spent
    in `perform`, in milliseconds.
-5. **sidekiq.error (tags: {queue: _queue_, worker: _job_, error: _errorclass_})**: counter incremented each time a
+6. **sidekiq.error (tags: {queue: _queue_, worker: _job_, error: _errorclass_})**: counter incremented each time a
    job fails.
 
 For job retry attempts, the above 4 metrics will still be reported but the enqueue/dequeue metrics

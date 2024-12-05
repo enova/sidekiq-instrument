@@ -32,16 +32,20 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         Sidekiq[:max_retries] = 0
       end
 
-      it 'increments StatsD dequeue counter' do
+      it 'increments StatsD dequeue and success counters' do
         expect do
           MyWorker.perform_async
-        end.to trigger_statsd_increment('shared.sidekiq.default.MyWorker.dequeue')
+        end.to trigger_statsd_increment('shared.sidekiq.default.MyWorker.dequeue') &&
+               trigger_statsd_increment('shared.sidekiq.default.MyWorker.success')
       end
 
-      it 'increments DogStatsD dequeue counter' do
+      it 'increments DogStatsD dequeue and success counters' do
         expect(
           Sidekiq::Instrument::Statter.dogstatsd
         ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
+        expect(
+          Sidekiq::Instrument::Statter.dogstatsd
+        ).to receive(:increment).with('sidekiq.success', expected_dog_options).once
         MyWorker.perform_async
       end
 
@@ -64,6 +68,9 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
           expect(
             Sidekiq::Instrument::Statter.dogstatsd
           ).to receive(:increment).with('sidekiq.dequeue', expected_dog_options).once
+          expect(
+            Sidekiq::Instrument::Statter.dogstatsd
+          ).to receive(:increment).with('sidekiq.success', expected_dog_options).once
           MyWorker.set(tags: [tag]).perform_async
         end
       end

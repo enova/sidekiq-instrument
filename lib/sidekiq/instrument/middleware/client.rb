@@ -20,7 +20,7 @@ module Sidekiq::Instrument
       # perform_in:
       #   - once when it is scheduled, with job['at'] key
       #   - once when it is enqueued, without job['at'] key
-      if job['at'].present?
+      unless job['at'].nil?
         Statter.statsd.increment(metric_name(class_instance, 'schedule'))
         Statter.dogstatsd&.increment('sidekiq.schedule', worker_dog_options(class_instance, job))
       else

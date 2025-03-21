@@ -2,6 +2,7 @@
 
 require 'sidekiq/instrument/mixin'
 require 'active_support/core_ext/string/inflections'
+require 'active_support/core_ext/object/blank'
 
 module Sidekiq::Instrument
   class ClientMiddleware
@@ -20,7 +21,7 @@ module Sidekiq::Instrument
       # perform_in:
       #   - once when it is scheduled, with job['at'] key
       #   - once when it is enqueued, without job['at'] key
-      unless job['at'].nil?
+      if job['at'].present?
         Statter.statsd.increment(metric_name(class_instance, 'schedule'))
         Statter.dogstatsd&.increment('sidekiq.schedule', worker_dog_options(class_instance, job))
       else

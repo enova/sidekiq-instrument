@@ -2,6 +2,7 @@
 
 require 'sidekiq/instrument/mixin'
 require 'active_support/core_ext/string/inflections'
+require 'active_support/core_ext/object/blank'
 
 module Sidekiq::Instrument
   class ClientMiddleware

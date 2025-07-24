@@ -170,7 +170,7 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/enova/
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
+The gem is available as open source under the terms of the [MIT License](LICENSE.txt).
 
 [statsd-instrument]: https://github.com/Shopify/statsd-instrument
 [sidekiq-scheduler]: https://github.com/moove-it/sidekiq-scheduler

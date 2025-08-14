@@ -1,17 +1,17 @@
 module Sidekiq::Instrument
   module MetricNames
-    def metric_name(worker, event)
+    def metric_name(worker, job, event)
       if worker.respond_to?(:statsd_metric_name)
         worker.send(:statsd_metric_name, event)
       else
-        "shared.sidekiq.#{queue_name(worker)}.#{class_name(worker)}.#{event}"
+        "shared.sidekiq.#{queue_name(job)}.#{class_name(worker)}.#{event}"
       end
     end
 
     def worker_dog_options(worker, job)
       {
         tags: [
-          "queue:#{queue_name(worker)}",
+          "queue:#{queue_name(job)}",
           "worker:#{underscore(class_name(worker))}"
         ].concat(job.fetch('tags', []))
       }
@@ -31,8 +31,8 @@ module Sidekiq::Instrument
 
     private
 
-    def queue_name(worker)
-      worker.class.get_sidekiq_options['queue']
+    def queue_name(job)
+      job['queue']
     end
 
     def class_name(worker)

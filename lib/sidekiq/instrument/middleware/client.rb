@@ -22,11 +22,11 @@ module Sidekiq::Instrument
       #   - once when it is scheduled, with job['at'] key
       #   - once when it is enqueued, without job['at'] key
       if job['at'].present?
-        Statter.statsd.increment(metric_name(class_instance, 'schedule'))
+        Statter.statsd.increment(metric_name(class_instance, job, 'schedule'))
         Statter.dogstatsd&.increment('sidekiq.schedule', worker_dog_options(class_instance, job))
       else
         WorkerMetrics.trace_workers_increment_counter(klass.name.underscore)
-        Statter.statsd.increment(metric_name(class_instance, 'enqueue'))
+        Statter.statsd.increment(metric_name(class_instance, job, 'enqueue'))
         Statter.dogstatsd&.increment('sidekiq.enqueue', worker_dog_options(class_instance, job))
       end
 

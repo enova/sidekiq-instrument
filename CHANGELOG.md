@@ -22,9 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ruby 3.3 support and full compatibility
 - CI testing for Ruby versions 2.7.8, 3.0, 3.1, 3.2, and 3.3
 - Redis gem dependency (>= 4.0) for compatibility with worker metrics
-- **Redis 8.x support** - CI now tests against Redis 4.0.14, 5.0.14, 6.2.14, 7.2.4, and 8.0.1
-- **Valkey support** - Full compatibility with Valkey 7.2+ and 8.0+ as a Redis-compatible alternative
-- CI testing matrix for Valkey versions 7.2.7 and 8.0.1
+- **Redis 8.x support** - CI now tests against Redis 4.x, 5.x, 6.x, 7.x, and 8.x (latest of each major)
+- **Valkey support** - Full compatibility with Valkey 7.x and 8.x as a Redis-compatible alternative
+- **Comprehensive Sidekiq version testing** - CI now tests against Sidekiq 4.x, 5.x, 6.x, 7.x, and 8.x (latest of each major)
+- CI testing matrix: 5 Ruby versions × 5 Sidekiq versions × 5 Redis versions = 125 combinations (plus 50 Valkey combinations)
 - Gemspec constraint: `required_ruby_version >= 2.7.8` to enforce minimum Ruby version at installation
 
 ### Upgraded

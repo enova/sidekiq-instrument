@@ -5,15 +5,18 @@ Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] libra
 ## Requirements
 
 - **Ruby**: 2.7.8 or higher
-- **Sidekiq**: 4.2 or higher (tested with Sidekiq 8.x)
+- **Sidekiq**: 4.2 or higher (tested with Sidekiq 4.x - 8.x)
 - **ActiveSupport**: 5.1 or higher (no upper version constraint)
 - **Redis**: 4.0+ or **Valkey**: 7.2+ (Redis-compatible alternative)
 
 This gem is tested against:
 
 - Ruby versions: 2.7.8, 3.0, 3.1, 3.2, 3.3
-- Redis versions: 4.0.14, 5.0.14, 6.2.14, 7.2.4, 8.0.1
-- Valkey versions: 7.2.7, 8.0.1
+- Sidekiq versions: 4.x, 5.x, 6.x, 7.x, 8.x (latest of each major)
+- Redis versions: 4.x, 5.x, 6.x, 7.x, 8.x (latest of each major)
+- Valkey versions: 7.x, 8.x (latest of each major)
+
+**CI Coverage:** 5 Ruby versions × 5 Sidekiq versions × 5 Redis versions = **125 test combinations** for Redis, plus 5 Ruby versions × 5 Sidekiq versions × 2 Valkey versions = **50 test combinations** for Valkey. **Total: 175 CI test combinations.**
 
 ### Redis and Valkey Support
 

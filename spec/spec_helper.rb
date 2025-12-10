@@ -4,58 +4,145 @@ require 'pry'
 require 'statsd/instrument'
 require 'sidekiq/testing'
 require 'datadog/statsd'
-require 'mock_redis'
-require 'redis'
 
-# Sidekiq version detection for compatibility
-SIDEKIQ_VERSION = Gem::Version.new(Sidekiq::VERSION)
-SIDEKIQ_7_OR_HIGHER = SIDEKIQ_VERSION >= Gem::Version.new('7.0.0')
-
-# Configure mock Redis to avoid requiring a running Redis server in tests
-$mock_redis = MockRedis.new
-
-class Redis
-  def self.new(*args)
-    $mock_redis
-  end
+# Check if real Redis is available (like in CI)
+def redis_available?
+  require 'redis'
+  Redis.new(url: ENV['REDIS_URL'] || 'redis://localhost:6379/0', timeout: 1).ping == 'PONG'
+rescue Redis::CannotConnectError, RedisClient::CannotConnectError, SocketError, Errno::ECONNREFUSED
+  false
 end
 
-# Configure Sidekiq to use mock Redis with version-specific handling
-module Sidekiq
-  class << self
-    def redis(&block)
-      if block_given?
-        if SIDEKIQ_7_OR_HIGHER
-          # Sidekiq 7.x+ uses redis-client and expects different signatures
-          # Try calling with multiple args for compatibility
-          begin
-            block.call($mock_redis, nil, nil)
-          rescue ArgumentError
-            # Fall back to single argument for simpler blocks
-            block.call($mock_redis)
-          end
-        else
-          # Sidekiq 4.x-6.x uses simpler block signatures
-          block.call($mock_redis)
-        end
-      else
-        $mock_redis
-      end
-    end
+USE_REAL_REDIS = ENV['USE_REAL_REDIS'] == 'true' || redis_available?
+
+if USE_REAL_REDIS
+  # Use real Redis connection (like CI does)
+  require 'redis'
+  
+  Sidekiq.configure_client do |config|
+    config.redis = { url: ENV['REDIS_URL'] || 'redis://localhost:6379/0' }
+  end
+
+  Sidekiq.configure_server do |config|
+    config.redis = { url: ENV['REDIS_URL'] || 'redis://localhost:6379/0' }
   end
   
   # Sidekiq 7.x+ removed the Sidekiq[:key] = value API
-  # Stub it out for backward compatibility with tests
-  @config_hash = {}
+  # Add compatibility shim for tests
+  module Sidekiq
+    @config_hash = {}
+    
+    def self.[]=(key, value)
+      @config_hash ||= {}
+      @config_hash[key] = value
+    end
+    
+    def self.[](key)
+      @config_hash ||= {}
+      @config_hash.fetch(key, 25) # Default max_retries is 25 in Sidekiq
+    end
+  end
+else
+  # Fall back to mock_redis if no real Redis available
+  require 'mock_redis'
+  require 'redis'
   
-  def self.[]=(key, value)
-    @config_hash ||= {}
-    @config_hash[key] = value
+  $mock_redis = MockRedis.new
+
+  class Redis
+    def self.new(*args)
+      $mock_redis
+    end
   end
   
-  def self.[](key)
-    @config_hash ||= {}
-    @config_hash.fetch(key, 25) # Default max_retries is 25 in Sidekiq
+  # Stub Sidekiq API classes when using mocks
+  module Sidekiq
+    class << self
+      def redis(&block)
+        if block_given?
+          # Try different block signatures for compatibility
+          begin
+            block.call($mock_redis, nil, nil)
+          rescue ArgumentError
+            begin
+              block.call($mock_redis, nil)
+            rescue ArgumentError
+              block.call($mock_redis)
+            end
+          end
+        else
+          $mock_redis
+        end
+      end
+    end
+    
+    @config_hash = {}
+    
+    def self.[]=(key, value)
+      @config_hash ||= {}
+      @config_hash[key] = value
+    end
+    
+    def self.[](key)
+      @config_hash ||= {}
+      @config_hash.fetch(key, 25) # Default max_retries is 25 in Sidekiq
+    end
+  end
+  
+  class Sidekiq::Stats
+    def initialize
+    end
+    
+    def processed
+      0
+    end
+    
+    def workers_size
+      0
+    end
+    
+    def enqueued
+      0
+    end
+    
+    def failed
+      0
+    end
+  end
+
+  class Sidekiq::Workers
+    def initialize
+    end
+    
+    def count
+      0
+    end
+    
+    def each
+    end
+  end
+
+  class Sidekiq::Queue
+    def self.all
+      []
+    end
+    
+    def initialize(name = 'default')
+      @name = name
+    end
+    
+    attr_reader :name
+    
+    def size
+      0
+    end
+    
+    def latency
+      0
+    end
+    
+    def clear
+    end
   end
 end
 
@@ -63,73 +150,19 @@ Sidekiq::Testing.inline!
 
 require 'sidekiq/instrument'
 
-# Stub Sidekiq API classes to avoid Redis connection issues
-# This works across all Sidekiq versions (4.2-8.x)
-class Sidekiq::Stats
-  def initialize
-    # Stubbed - no Redis connection needed
-  end
-  
-  def processed
-    0
-  end
-  
-  def workers_size
-    0
-  end
-  
-  def enqueued
-    0
-  end
-  
-  def failed
-    0
-  end
-end
-
-class Sidekiq::Workers
-  def initialize
-    # Stubbed
-  end
-  
-  def count
-    0
-  end
-  
-  def each
-    # No workers in test
-  end
-end
-
-class Sidekiq::Queue
-  def self.all
-    []
-  end
-  
-  def initialize(name = 'default')
-    @name = name
-  end
-  
-  attr_reader :name
-  
-  def size
-    0
-  end
-  
-  def latency
-    0
-  end
-  
-  def clear
-    # Stubbed
-  end
-end
-
 RSpec.configure do |config|
   config.include StatsD::Instrument::Matchers
   
   config.before(:suite) do
-    puts "\n🔧 Testing with Sidekiq #{Sidekiq::VERSION} (Ruby #{RUBY_VERSION})"
+    redis_mode = USE_REAL_REDIS ? "REAL REDIS" : "MOCK REDIS"
+    puts "\n🔧 Testing with Sidekiq #{Sidekiq::VERSION} (Ruby #{RUBY_VERSION}) - #{redis_mode}"
+  end
+  
+  config.before(:each) do
+    if USE_REAL_REDIS
+      # Clear Redis before each test to ensure clean state
+      Sidekiq.redis { |conn| conn.flushdb }
+    end
   end
 end
 

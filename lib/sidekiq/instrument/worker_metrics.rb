@@ -46,7 +46,10 @@ module Sidekiq
         def workers_in_queue
           return unless enabled?
           Sidekiq.redis do |redis|
-            redis.hgetall(worker_metric_name).transform_values(&:to_i)
+            result = redis.hgetall(worker_metric_name)
+            # redis gem 5.x returns an Array ["key", "value", ...], redis 4.x returns a Hash
+            result = Hash[*result] if result.is_a?(Array)
+            result.transform_values(&:to_i)
           end
         end
 

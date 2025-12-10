@@ -9,7 +9,11 @@ require 'datadog/statsd'
 def redis_available?
   require 'redis'
   Redis.new(url: ENV['REDIS_URL'] || 'redis://localhost:6379/0', timeout: 1).ping == 'PONG'
-rescue Redis::CannotConnectError, RedisClient::CannotConnectError, SocketError, Errno::ECONNREFUSED
+rescue LoadError, NameError
+  # redis gem not installed or Redis constant not defined
+  false
+rescue StandardError
+  # Any connection errors (Redis::CannotConnectError, SocketError, Errno::ECONNREFUSED, etc.)
   false
 end
 

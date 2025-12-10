@@ -8,22 +8,25 @@ Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] libra
 - **Sidekiq**: 4.2 or higher (tested with Sidekiq 4.x - 8.x)
   - **Note**: Sidekiq 8.x requires Ruby 3.2 or higher
 - **ActiveSupport**: 5.1 or higher (no upper version constraint)
-- **Redis**: Compatible with your Sidekiq version (3.2+ for Sidekiq 4-6, 4.2+ for Sidekiq 7+)
+- **Redis Server**: Version depends on Sidekiq version
+  - Sidekiq 4-6: Redis 4.0+ (tested with Redis 4-8)
+  - Sidekiq 7-8: **Redis 6.0+** required (redis-client gem needs HELLO command)
 - **Valkey**: 7.2+ (Redis-compatible alternative, works with Sidekiq 7+)
 
 This gem is tested against:
 
 - Ruby versions: 2.7.8, 3.0, 3.1, 3.2, 3.3
 - Sidekiq versions: 4.x, 5.x, 6.x, 7.x, 8.x (latest of each major)
-- Redis versions: 4.x, 5.x, 6.x, 7.x, 8.x (latest of each major)
+- Redis server versions: 4.x-8.x (4-5 for Sidekiq 4-6, 6-8 for Sidekiq 7-8)
 - Valkey versions: 7.x, 8.x (latest of each major)
 
-### Ruby + Sidekiq Compatibility Matrix
+### Ruby + Sidekiq + Redis Compatibility Matrix
 
-| Sidekiq Version | Minimum Ruby | Tested Ruby Versions |
-|----------------|--------------|---------------------|
-| 4.x - 7.x      | 2.7.8        | 2.7.8, 3.0, 3.1, 3.2, 3.3 |
-| 8.x            | 3.2.0        | 3.2, 3.3 |
+| Sidekiq Version | Minimum Ruby | Min Redis Server | Tested Ruby Versions      |
+| --------------- | ------------ | ---------------- | ------------------------- |
+| 4.x - 6.x       | 2.7.8        | 4.0+             | 2.7.8, 3.0, 3.1, 3.2, 3.3 |
+| 7.x             | 2.7.8        | **6.0+**         | 2.7.8, 3.0, 3.1, 3.2, 3.3 |
+| 8.x             | 3.2.0        | **6.0+**         | 3.2, 3.3                  |
 
 **CI Coverage:** 30 Redis test combinations + 7 Valkey test combinations = **37 valid CI test jobs** covering all supported Ruby, Sidekiq, and Redis/Valkey version combinations.
 
@@ -42,12 +45,16 @@ gem 'dogstatsd-ruby' # optional
 
 And then execute:
 
-    bundle
+```sh
+bundle
+```
 
 Or install the gem(s) yourself as:
 
-    gem install sidekiq-instrument
-    gem install dogstatsd-ruby # again, optional
+```sh
+gem install sidekiq-instrument
+gem install dogstatsd-ruby # again, optional
+```
 
 ## Usage
 

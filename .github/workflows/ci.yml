@@ -1,10 +1,11 @@
 name: CI
 
 # Test matrix strategy:
-# - Sidekiq 4.x-7.x: Compatible with Ruby 2.7-3.3
-# - Sidekiq 8.x: Requires Ruby >= 3.2
+# - Sidekiq 4.x-6.x: Compatible with Ruby 2.7-3.3, Redis 4+
+# - Sidekiq 7.x-8.x: Require Redis 6+ (redis-client gem needs HELLO command)
+# - Sidekiq 8.x: Additionally requires Ruby >= 3.2
 # - We test representative combinations of Ruby + Sidekiq + Redis/Valkey versions
-# - Total: 30 Redis tests + 7 Valkey tests = 37 jobs (down from 175 invalid combinations)
+# - Total: 21 Redis tests + 7 Valkey tests = 28 jobs (down from 175 invalid combinations)
 
 on:
   push:
@@ -61,16 +62,16 @@ jobs:
             sidekiq-version: '6'
             redis-version: '8'
 
-          # Sidekiq 7.x: Ruby 2.7-3.3, Redis 4-8
+          # Sidekiq 7.x: Ruby 2.7-3.3, Redis 6-8 (redis-client requires Redis 6+ for HELLO command)
           - ruby-version: '2.7.8'
             sidekiq-version: '7'
-            redis-version: '4'
+            redis-version: '6'
           - ruby-version: '3.0'
             sidekiq-version: '7'
-            redis-version: '5'
+            redis-version: '6'
           - ruby-version: '3.1'
             sidekiq-version: '7'
-            redis-version: '6'
+            redis-version: '7'
           - ruby-version: '3.2'
             sidekiq-version: '7'
             redis-version: '7'
@@ -78,16 +79,16 @@ jobs:
             sidekiq-version: '7'
             redis-version: '8'
 
-          # Sidekiq 8.x: Ruby 3.2+, Redis 5-8 (Sidekiq 8 requires Ruby >= 3.2)
+          # Sidekiq 8.x: Ruby 3.2+, Redis 6-8 (Sidekiq 8 requires Ruby >= 3.2, redis-client requires Redis 6+)
           - ruby-version: '3.2'
             sidekiq-version: '8'
-            redis-version: '5'
+            redis-version: '6'
           - ruby-version: '3.2'
             sidekiq-version: '8'
             redis-version: '7'
           - ruby-version: '3.3'
             sidekiq-version: '8'
-            redis-version: '6'
+            redis-version: '7'
           - ruby-version: '3.3'
             sidekiq-version: '8'
             redis-version: '8'

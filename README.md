@@ -10,6 +10,7 @@ Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] libra
 - **Redis**: 4.0+ or **Valkey**: 7.2+ (Redis-compatible alternative)
 
 This gem is tested against:
+
 - Ruby versions: 2.7.8, 3.0, 3.1, 3.2, 3.3
 - Redis versions: 4.0.14, 5.0.14, 6.2.14, 7.2.4, 8.0.1
 - Valkey versions: 7.2.7, 8.0.1
@@ -29,12 +30,12 @@ gem 'dogstatsd-ruby' # optional
 
 And then execute:
 
-    $ bundle
+    bundle
 
 Or install the gem(s) yourself as:
 
-    $ gem install sidekiq-instrument
-    $ gem install dogstatsd-ruby # again, optional
+    gem install sidekiq-instrument
+    gem install dogstatsd-ruby # again, optional
 
 ## Usage
 
@@ -89,6 +90,7 @@ Sidekiq::Instrument::WorkerMetrics.namespace = <APP_NAME>
 ```
 
 ## StatsD Keys
+
 For each job, the following metrics will be reported:
 
 1. **shared.sidekiq._queue_._job_.schedule**: counter incremented each time a
@@ -113,13 +115,16 @@ The metric names can be changed by overriding the `statsd_metric_name`
 method in your worker classes.
 
 For each queue, the following metrics will be reported:
+
 1. **shared.sidekiq._queue_.size**: gauge of how many jobs are in the queue
 2. **shared.sidekiq._queue_.latency**: gauge of how long the oldest job has been in the queue
 
 For each worker, the following metrics and tags will be reported:
+
 1. **sidekiq.worker_metrics.in_queue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement (**this metric is currently inaccurate**)
 
 ## DogStatsD Keys
+
 For each job, the following metrics and tags will be reported:
 
 1. **sidekiq.schedule (tags: {queue: _queue_, worker: _job_})**: counter incremented each time a
@@ -141,10 +146,12 @@ will have a `.retry` appended:
 2. **sidekiq.dequeue.retry (tags: {queue: _queue_, worker: _job_})**
 
 For each queue, the following metrics and tags will be reported:
+
 1. **sidekiq.queue.size (tags: {queue: _queue_})**: gauge of how many jobs are in the queue
 2. **sidekiq.queue.latency (tags: {queue: _queue_})**: gauge of how long the oldest job has been in the queue
 
 For each worker, the following metrics and tags will be reported:
+
 1. **sidekiq.worker_metrics.in_queue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement (**this metric is currently inaccurate**)
 
 ## Worker
@@ -183,8 +190,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/enova/sidekiq-instrument.
-
+Bug reports and pull requests are welcome on GitHub at <https://github.com/enova/sidekiq-instrument>.
 
 ## License
 

@@ -7,7 +7,8 @@ Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] libra
 - **Ruby**: 2.7.8 or higher
 - **Sidekiq**: 4.2 or higher (tested with Sidekiq 4.x - 8.x)
 - **ActiveSupport**: 5.1 or higher (no upper version constraint)
-- **Redis**: 4.0+ or **Valkey**: 7.2+ (Redis-compatible alternative)
+- **Redis**: Compatible with your Sidekiq version (3.2+ for Sidekiq 4-6, 4.2+ for Sidekiq 7+)
+- **Valkey**: 7.2+ (Redis-compatible alternative, works with Sidekiq 7+)
 
 This gem is tested against:
 

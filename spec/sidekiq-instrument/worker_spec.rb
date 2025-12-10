@@ -146,14 +146,18 @@ RSpec.describe Sidekiq::Instrument::Worker do
       let(:expected_dog_options) { { tags: ['queue:default', 'worker:my_worker'] } }
 
       before do
-        Sidekiq.server_middleware do |chain|
-          chain.add Sidekiq::Instrument::ServerMiddleware
+        Sidekiq.configure_server do |config|
+          config.server_middleware do |chain|
+            chain.add Sidekiq::Instrument::ServerMiddleware
+          end
         end
       end
 
       after do
-        Sidekiq.server_middleware do |chain|
-          chain.remove Sidekiq::Instrument::ServerMiddleware
+        Sidekiq.configure_server do |config|
+          config.server_middleware do |chain|
+            chain.remove Sidekiq::Instrument::ServerMiddleware
+          end
         end
       end
 

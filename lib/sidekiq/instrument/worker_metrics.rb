@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'redis'
-require 'redis-client'
+
 module Sidekiq
   module Instrument
     # Stores worker count with a key sidekiq_instrument_trace_workers:#{namespace}:in_queue

@@ -20,12 +20,11 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'sidekiq', '>= 4.2'
+  spec.add_dependency 'redis', '>= 3.2'  # Required by our code (worker_metrics.rb)
   spec.add_dependency 'statsd-instrument', '>= 2.0.4'
   spec.add_dependency 'dogstatsd-ruby', '>= 5.5'
   spec.add_dependency 'activesupport', '>= 5.1'
-  # Note: redis and redis-client are pulled in by sidekiq, no need to specify here
-  # Sidekiq 4-6 uses redis ~> 3.2 or ~> 4.0
-  # Sidekiq 7+ uses redis >= 4.2 + redis-client >= 0.9
+  # Note: redis-client is pulled in by Sidekiq 7+, no need to specify here
 
   # Note: bundler is not listed as a development dependency because it's
   # already provided by the Ruby environment. Different Ruby versions require

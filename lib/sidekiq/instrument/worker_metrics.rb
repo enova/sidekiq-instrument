@@ -46,7 +46,7 @@ module Sidekiq
         def workers_in_queue
           return unless enabled?
           Sidekiq.redis do |redis|
-            redis.hgetall(worker_metric_name)
+            redis.hgetall(worker_metric_name).transform_values(&:to_i)
           end
         end
 

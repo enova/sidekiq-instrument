@@ -23,72 +23,72 @@ jobs:
       matrix:
         include:
           # Sidekiq 4.x: Ruby 2.7-3.3, Redis 4-8
-          - ruby-version: 2.7.8
+          - ruby-version: '2.7.8'
             sidekiq-version: '4'
             redis-version: '4'
-          - ruby-version: 2.7.8
+          - ruby-version: '2.7.8'
             sidekiq-version: '4'
             redis-version: '7'
-          - ruby-version: 3.0
+          - ruby-version: '3.0'
             sidekiq-version: '4'
             redis-version: '5'
-          - ruby-version: 3.3
+          - ruby-version: '3.3'
             sidekiq-version: '4'
             redis-version: '8'
 
           # Sidekiq 5.x: Ruby 2.7-3.3, Redis 4-8
-          - ruby-version: 2.7.8
+          - ruby-version: '2.7.8'
             sidekiq-version: '5'
             redis-version: '4'
-          - ruby-version: 3.1
+          - ruby-version: '3.1'
             sidekiq-version: '5'
             redis-version: '6'
-          - ruby-version: 3.3
+          - ruby-version: '3.3'
             sidekiq-version: '5'
             redis-version: '8'
 
           # Sidekiq 6.x: Ruby 2.7-3.3, Redis 4-8
-          - ruby-version: 2.7.8
+          - ruby-version: '2.7.8'
             sidekiq-version: '6'
             redis-version: '4'
-          - ruby-version: 3.0
+          - ruby-version: '3.0'
             sidekiq-version: '6'
             redis-version: '5'
-          - ruby-version: 3.2
+          - ruby-version: '3.2'
             sidekiq-version: '6'
             redis-version: '7'
-          - ruby-version: 3.3
+          - ruby-version: '3.3'
             sidekiq-version: '6'
             redis-version: '8'
 
           # Sidekiq 7.x: Ruby 2.7-3.3, Redis 4-8
-          - ruby-version: 2.7.8
+          - ruby-version: '2.7.8'
             sidekiq-version: '7'
             redis-version: '4'
-          - ruby-version: 3.0
+          - ruby-version: '3.0'
             sidekiq-version: '7'
             redis-version: '5'
-          - ruby-version: 3.1
+          - ruby-version: '3.1'
             sidekiq-version: '7'
             redis-version: '6'
-          - ruby-version: 3.2
+          - ruby-version: '3.2'
             sidekiq-version: '7'
             redis-version: '7'
-          - ruby-version: 3.3
+          - ruby-version: '3.3'
             sidekiq-version: '7'
             redis-version: '8'
 
           # Sidekiq 8.x: Ruby 3.2+, Redis 5-8 (Sidekiq 8 requires Ruby >= 3.2)
-          - ruby-version: 3.2
+          - ruby-version: '3.2'
             sidekiq-version: '8'
             redis-version: '5'
-          - ruby-version: 3.2
+          - ruby-version: '3.2'
             sidekiq-version: '8'
             redis-version: '7'
-          - ruby-version: 3.3
+          - ruby-version: '3.3'
             sidekiq-version: '8'
             redis-version: '6'
-          - ruby-version: 3.3
+          - ruby-version: '3.3'
             sidekiq-version: '8'
             redis-version: '8'
 
@@ -140,29 +140,29 @@ jobs:
       matrix:
         include:
           # Sidekiq 4.x-6.x: Ruby 2.7-3.3, Valkey 7-8
-          - ruby-version: 2.7.8
+          - ruby-version: '2.7.8'
             sidekiq-version: '4'
             valkey-version: '7'
-          - ruby-version: 3.3
+          - ruby-version: '3.3'
             sidekiq-version: '5'
             valkey-version: '8'
-          - ruby-version: 3.1
+          - ruby-version: '3.1'
             sidekiq-version: '6'
             valkey-version: '7'
 
           # Sidekiq 7.x: Ruby 2.7-3.3, Valkey 7-8
-          - ruby-version: 2.7.8
+          - ruby-version: '2.7.8'
             sidekiq-version: '7'
             valkey-version: '7'
-          - ruby-version: 3.2
+          - ruby-version: '3.2'
             sidekiq-version: '7'
             valkey-version: '8'
 
           # Sidekiq 8.x: Ruby 3.2+, Valkey 7-8 (Sidekiq 8 requires Ruby >= 3.2)
-          - ruby-version: 3.2
+          - ruby-version: '3.2'
             sidekiq-version: '8'
             valkey-version: '7'
-          - ruby-version: 3.3
+          - ruby-version: '3.3'
             sidekiq-version: '8'
             valkey-version: '8'
 

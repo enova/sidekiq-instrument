@@ -23,8 +23,9 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'statsd-instrument', '>= 2.0.4'
   spec.add_dependency 'dogstatsd-ruby', '>= 5.5'
   spec.add_dependency 'activesupport', '>= 5.1'
-  spec.add_dependency 'redis-client', '>= 0.14.1'
-  spec.add_dependency 'redis', '>= 4.0'
+  # Note: redis and redis-client are pulled in by sidekiq, no need to specify here
+  # Sidekiq 4-6 uses redis ~> 3.2 or ~> 4.0
+  # Sidekiq 7+ uses redis >= 4.2 + redis-client >= 0.9
 
   spec.add_development_dependency 'bundler'
   spec.add_development_dependency 'rake'

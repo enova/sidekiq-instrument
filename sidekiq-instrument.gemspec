@@ -27,7 +27,9 @@ Gem::Specification.new do |spec|
   # Sidekiq 4-6 uses redis ~> 3.2 or ~> 4.0
   # Sidekiq 7+ uses redis >= 4.2 + redis-client >= 0.9
 
-  spec.add_development_dependency 'bundler'
+  # Note: bundler is not listed as a development dependency because it's
+  # already provided by the Ruby environment. Different Ruby versions require
+  # different bundler versions (2.x for Ruby 2.7, 3.x for Ruby 3.0-3.1, 4.x for Ruby 3.2+)
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec'
   spec.add_development_dependency 'rubocop'

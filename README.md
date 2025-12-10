@@ -2,6 +2,16 @@
 
 Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] library and \[optionally\] DataDog's [dogstatsd-ruby](https://github.com/DataDog/dogstatsd-ruby), incrementing a counter for each enqueue and dequeue per job type, and timing the full runtime of your perform method.
 
+## Requirements
+
+- **Ruby**: 2.7.8 or higher
+- **Sidekiq**: 4.2 or higher (tested with Sidekiq 8.x)
+- **ActiveSupport**: 5.1 or higher (no upper version constraint)
+
+This gem is tested against:
+- Ruby versions: 2.7.8, 3.0, 3.1, 3.2, 3.3
+- Redis versions: 4, 5, 6, 7
+
 ## Installation
 
 Add the following to your application's Gemfile:
@@ -158,6 +168,8 @@ This can be either an Array or a Hash (if you also want to map a stat to a diffe
 You can schedule this however you see fit. A simple way is to use [sidekiq-scheduler][sidekiq-scheduler] to run it every N minutes.
 
 ## Development
+
+**Note:** Development requires Ruby 2.7.8 or higher. The recommended Ruby version is 3.3.
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
 

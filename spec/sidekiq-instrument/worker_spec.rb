@@ -66,10 +66,10 @@ RSpec.describe Sidekiq::Instrument::Worker do
 
       context 'when jobs in queues' do
         before do
-          Sidekiq::Testing.disable! do
-            Sidekiq::Queue.all.each(&:clear)
-            MyWorker.perform_async
-          end
+          # Stub Sidekiq::Queue.all to return a queue with jobs
+          allow(Sidekiq::Queue).to receive(:all).and_return([
+            instance_double(Sidekiq::Queue, name: 'default', size: 1, latency: 0.5)
+          ])
         end
 
         it 'gauges the size of the queues' do

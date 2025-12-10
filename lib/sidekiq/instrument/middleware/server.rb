@@ -13,7 +13,7 @@ module Sidekiq::Instrument
       Statter.statsd.increment(metric_name(worker, job, dequeue_string))
 
       start_time = Time.now
-      yield block
+      yield
       execution_time_ms = (Time.now - start_time) * 1000
       Statter.dogstatsd&.timing('sidekiq.runtime', execution_time_ms, worker_dog_options(worker, job))
       Statter.statsd.measure(metric_name(worker, job, 'runtime'), execution_time_ms)

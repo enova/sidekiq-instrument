@@ -12,7 +12,10 @@ RSpec.describe Sidekiq::Instrument::Worker do
 
     before do
       Redis.new.hdel worker_metric_name, 'my_worker'
-      Sidekiq::Context.current[:class] = 'MyWorker'
+      # Sidekiq::Context was introduced in Sidekiq 7.0
+      if defined?(Sidekiq::Context)
+        Sidekiq::Context.current[:class] = 'MyWorker'
+      end
     end
 
     shared_examples 'worker behavior' do |expected_stats|

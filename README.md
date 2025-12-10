@@ -7,10 +7,16 @@ Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] libra
 - **Ruby**: 2.7.8 or higher
 - **Sidekiq**: 4.2 or higher (tested with Sidekiq 8.x)
 - **ActiveSupport**: 5.1 or higher (no upper version constraint)
+- **Redis**: 4.0+ or **Valkey**: 7.2+ (Redis-compatible alternative)
 
 This gem is tested against:
 - Ruby versions: 2.7.8, 3.0, 3.1, 3.2, 3.3
-- Redis versions: 4, 5, 6, 7
+- Redis versions: 4.0.14, 5.0.14, 6.2.14, 7.2.4, 8.0.1
+- Valkey versions: 7.2.7, 8.0.1
+
+### Redis and Valkey Support
+
+This gem works with both Redis and Valkey (a Redis-compatible alternative). Valkey is a high-performance data store that maintains protocol compatibility with Redis, making it a drop-in replacement for most Redis use cases.
 
 ## Installation
 

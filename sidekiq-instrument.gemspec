@@ -21,6 +21,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'dogstatsd-ruby', '>= 5.5'
   spec.add_dependency 'activesupport', '>= 5.1'
   spec.add_dependency 'redis-client', '>= 0.14.1'
+  spec.add_dependency 'redis', '>= 4.0'
 
   spec.add_development_dependency 'bundler'
   spec.add_development_dependency 'rake'

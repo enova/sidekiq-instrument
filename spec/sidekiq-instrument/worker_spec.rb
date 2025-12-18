@@ -12,7 +12,10 @@ RSpec.describe Sidekiq::Instrument::Worker do
 
     before do
       Redis.new.hdel worker_metric_name, 'my_worker'
-      Sidekiq::Context.current[:class] = 'MyWorker'
+      # Sidekiq::Context was introduced in Sidekiq 7.0
+      if defined?(Sidekiq::Context)
+        Sidekiq::Context.current[:class] = 'MyWorker'
+      end
     end
 
     shared_examples 'worker behavior' do |expected_stats|
@@ -66,10 +69,10 @@ RSpec.describe Sidekiq::Instrument::Worker do
 
       context 'when jobs in queues' do
         before do
-          Sidekiq::Testing.disable! do
-            Sidekiq::Queue.all.each(&:clear)
-            MyWorker.perform_async
-          end
+          # Stub Sidekiq::Queue.all to return a queue with jobs
+          allow(Sidekiq::Queue).to receive(:all).and_return([
+            instance_double(Sidekiq::Queue, name: 'default', size: 1, latency: 0.5)
+          ])
         end
 
         it 'gauges the size of the queues' do
@@ -146,14 +149,18 @@ RSpec.describe Sidekiq::Instrument::Worker do
       let(:expected_dog_options) { { tags: ['queue:default', 'worker:my_worker'] } }
 
       before do
-        Sidekiq.server_middleware do |chain|
-          chain.add Sidekiq::Instrument::ServerMiddleware
+        Sidekiq.configure_server do |config|
+          config.server_middleware do |chain|
+            chain.add Sidekiq::Instrument::ServerMiddleware
+          end
         end
       end
 
       after do
-        Sidekiq.server_middleware do |chain|
-          chain.remove Sidekiq::Instrument::ServerMiddleware
+        Sidekiq.configure_server do |config|
+          config.server_middleware do |chain|
+            chain.remove Sidekiq::Instrument::ServerMiddleware
+          end
         end
       end
 

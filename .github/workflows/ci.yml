@@ -1,5 +1,12 @@
 name: CI
 
+# Test matrix strategy:
+# - Sidekiq 4.x-6.x: Compatible with Ruby 2.7-3.3, Redis 4+
+# - Sidekiq 7.x-8.x: Require Redis 6+ (redis-client gem needs HELLO command)
+# - Sidekiq 8.x: Additionally requires Ruby >= 3.2
+# - We test representative combinations of Ruby + Sidekiq + Redis/Valkey versions
+# - Total: 21 Redis tests + 7 Valkey tests = 28 jobs (down from 175 invalid combinations)
+
 on:
   push:
     branches:
@@ -13,19 +20,109 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        ruby-version: [2.6, 2.7, 3.0]
-        redis-version: [4, 5, 6, 7]
+        include:
+          # Sidekiq 4.x: Ruby 2.7-3.3, Redis 4-8
+          - ruby-version: '2.7.8'
+            sidekiq-version: '4'
+            redis-version: '4'
+          - ruby-version: '2.7.8'
+            sidekiq-version: '4'
+            redis-version: '7'
+          - ruby-version: '3.0'
+            sidekiq-version: '4'
+            redis-version: '5'
+          - ruby-version: '3.3'
+            sidekiq-version: '4'
+            redis-version: '8'
+
+          # Sidekiq 5.x: Ruby 2.7-3.3, Redis 4-8
+          - ruby-version: '2.7.8'
+            sidekiq-version: '5'
+            redis-version: '4'
+          - ruby-version: '3.1'
+            sidekiq-version: '5'
+            redis-version: '6'
+          - ruby-version: '3.3'
+            sidekiq-version: '5'
+            redis-version: '8'
+
+          # Sidekiq 6.x: Ruby 2.7-3.3, Redis 4-8
+          - ruby-version: '2.7.8'
+            sidekiq-version: '6'
+            redis-version: '4'
+          - ruby-version: '3.0'
+            sidekiq-version: '6'
+            redis-version: '5'
+          - ruby-version: '3.2'
+            sidekiq-version: '6'
+            redis-version: '7'
+          - ruby-version: '3.3'
+            sidekiq-version: '6'
+            redis-version: '8'
+
+          # Sidekiq 7.x: Ruby 2.7-3.3, Redis 6-8 (redis-client requires Redis 6+ for HELLO command)
+          - ruby-version: '2.7.8'
+            sidekiq-version: '7'
+            redis-version: '6'
+          - ruby-version: '3.0'
+            sidekiq-version: '7'
+            redis-version: '6'
+          - ruby-version: '3.1'
+            sidekiq-version: '7'
+            redis-version: '7'
+          - ruby-version: '3.2'
+            sidekiq-version: '7'
+            redis-version: '7'
+          - ruby-version: '3.3'
+            sidekiq-version: '7'
+            redis-version: '8'
+
+          # Sidekiq 8.x: Ruby 3.2+, Redis 6-8 (Sidekiq 8 requires Ruby >= 3.2, redis-client requires Redis 6+)
+          - ruby-version: '3.2'
+            sidekiq-version: '8'
+            redis-version: '6'
+          - ruby-version: '3.2'
+            sidekiq-version: '8'
+            redis-version: '7'
+          - ruby-version: '3.3'
+            sidekiq-version: '8'
+            redis-version: '7'
+          - ruby-version: '3.3'
+            sidekiq-version: '8'
+            redis-version: '8'
 
     steps:
       - name: Checkout project
         uses: actions/checkout@v3
 
+      - name: Create Gemfile for specific Sidekiq version
+        run: |
+          cat > Gemfile.ci <<EOF
+          source 'https://rubygems.org'
+
+          gem 'sidekiq', '~> ${{ matrix.sidekiq-version }}.0'
+
+          gemspec
+          EOF
+          cat Gemfile.ci
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
-          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+          bundler-cache: false
+        env:
+          BUNDLE_GEMFILE: Gemfile.ci
+
+      - name: Install dependencies
+        env:
+          BUNDLE_GEMFILE: Gemfile.ci
+        run: |
+          bundle install --jobs 4 --retry 3
+          echo "=== Installed Sidekiq version ==="
+          bundle exec gem list sidekiq
 
       - name: Start Redis
         uses: supercharge/redis-github-action@1.5.0
@@ -33,4 +130,86 @@ jobs:
           redis-version: ${{ matrix.redis-version }}
 
       - name: Run tests
+        env:
+          BUNDLE_GEMFILE: Gemfile.ci
+        run: bundle exec rake
+
+  test-valkey:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Sidekiq 4.x-6.x: Ruby 2.7-3.3, Valkey 7-8
+          - ruby-version: '2.7.8'
+            sidekiq-version: '4'
+            valkey-version: '7'
+          - ruby-version: '3.3'
+            sidekiq-version: '5'
+            valkey-version: '8'
+          - ruby-version: '3.1'
+            sidekiq-version: '6'
+            valkey-version: '7'
+
+          # Sidekiq 7.x: Ruby 2.7-3.3, Valkey 7-8
+          - ruby-version: '2.7.8'
+            sidekiq-version: '7'
+            valkey-version: '7'
+          - ruby-version: '3.2'
+            sidekiq-version: '7'
+            valkey-version: '8'
+
+          # Sidekiq 8.x: Ruby 3.2+, Valkey 7-8 (Sidekiq 8 requires Ruby >= 3.2)
+          - ruby-version: '3.2'
+            sidekiq-version: '8'
+            valkey-version: '7'
+          - ruby-version: '3.3'
+            sidekiq-version: '8'
+            valkey-version: '8'
+
+    services:
+      valkey:
+        image: valkey/valkey:${{ matrix.valkey-version }}-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v3
+
+      - name: Create Gemfile for specific Sidekiq version
+        run: |
+          cat > Gemfile.ci <<EOF
+          source 'https://rubygems.org'
+
+          gem 'sidekiq', '~> ${{ matrix.sidekiq-version }}.0'
+
+          gemspec
+          EOF
+          cat Gemfile.ci
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: false
+        env:
+          BUNDLE_GEMFILE: Gemfile.ci
+
+      - name: Install dependencies
+        env:
+          BUNDLE_GEMFILE: Gemfile.ci
+        run: |
+          bundle install --jobs 4 --retry 3
+          echo "=== Installed Sidekiq version ==="
+          bundle exec gem list sidekiq
+
+      - name: Run tests
+        env:
+          BUNDLE_GEMFILE: Gemfile.ci
         run: bundle exec rake

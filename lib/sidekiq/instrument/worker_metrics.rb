@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'redis'
-require 'redis-client'
+
 module Sidekiq
   module Instrument
     # Stores worker count with a key sidekiq_instrument_trace_workers:#{namespace}:in_queue
@@ -46,7 +46,10 @@ module Sidekiq
         def workers_in_queue
           return unless enabled?
           Sidekiq.redis do |redis|
-            redis.hgetall(worker_metric_name)
+            result = redis.hgetall(worker_metric_name)
+            # redis gem 5.x returns an Array ["key", "value", ...], redis 4.x returns a Hash
+            result = Hash[*result] if result.is_a?(Array)
+            result.transform_values(&:to_i)
           end
         end
 

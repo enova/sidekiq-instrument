@@ -2,6 +2,38 @@
 
 Reports job metrics using Shopify's [statsd-instrument][statsd-instrument] library and \[optionally\] DataDog's [dogstatsd-ruby](https://github.com/DataDog/dogstatsd-ruby), incrementing a counter for each enqueue and dequeue per job type, and timing the full runtime of your perform method.
 
+## Requirements
+
+- **Ruby**: 2.7.8 or higher
+- **Sidekiq**: 4.2 or higher (tested with Sidekiq 4.x - 8.x)
+  - **Note**: Sidekiq 8.x requires Ruby 3.2 or higher
+- **ActiveSupport**: 5.1 or higher (no upper version constraint)
+- **Redis Server**: Version depends on Sidekiq version
+  - Sidekiq 4-6: Redis 4.0+ (tested with Redis 4-8)
+  - Sidekiq 7-8: **Redis 6.0+** required (redis-client gem needs HELLO command)
+- **Valkey**: 7.2+ (Redis-compatible alternative, works with Sidekiq 7+)
+
+This gem is tested against:
+
+- Ruby versions: 2.7.8, 3.0, 3.1, 3.2, 3.3
+- Sidekiq versions: 4.x, 5.x, 6.x, 7.x, 8.x (latest of each major)
+- Redis server versions: 4.x-8.x (4-5 for Sidekiq 4-6, 6-8 for Sidekiq 7-8)
+- Valkey versions: 7.x, 8.x (latest of each major)
+
+### Ruby + Sidekiq + Redis Compatibility Matrix
+
+| Sidekiq Version | Minimum Ruby | Min Redis Server | Tested Ruby Versions      |
+| --------------- | ------------ | ---------------- | ------------------------- |
+| 4.x - 6.x       | 2.7.8        | 4.0+             | 2.7.8, 3.0, 3.1, 3.2, 3.3 |
+| 7.x             | 2.7.8        | **6.0+**         | 2.7.8, 3.0, 3.1, 3.2, 3.3 |
+| 8.x             | 3.2.0        | **6.0+**         | 3.2, 3.3                  |
+
+**CI Coverage:** 30 Redis test combinations + 7 Valkey test combinations = **37 valid CI test jobs** covering all supported Ruby, Sidekiq, and Redis/Valkey version combinations.
+
+### Redis and Valkey Support
+
+This gem works with both Redis and Valkey (a Redis-compatible alternative). Valkey is a high-performance data store that maintains protocol compatibility with Redis, making it a drop-in replacement for most Redis use cases.
+
 ## Installation
 
 Add the following to your application's Gemfile:
@@ -13,12 +45,16 @@ gem 'dogstatsd-ruby' # optional
 
 And then execute:
 
-    $ bundle
+```sh
+bundle
+```
 
 Or install the gem(s) yourself as:
 
-    $ gem install sidekiq-instrument
-    $ gem install dogstatsd-ruby # again, optional
+```sh
+gem install sidekiq-instrument
+gem install dogstatsd-ruby # again, optional
+```
 
 ## Usage
 
@@ -73,6 +109,7 @@ Sidekiq::Instrument::WorkerMetrics.namespace = <APP_NAME>
 ```
 
 ## StatsD Keys
+
 For each job, the following metrics will be reported:
 
 1. **shared.sidekiq._queue_._job_.schedule**: counter incremented each time a
@@ -97,13 +134,16 @@ The metric names can be changed by overriding the `statsd_metric_name`
 method in your worker classes.
 
 For each queue, the following metrics will be reported:
+
 1. **shared.sidekiq._queue_.size**: gauge of how many jobs are in the queue
 2. **shared.sidekiq._queue_.latency**: gauge of how long the oldest job has been in the queue
 
 For each worker, the following metrics and tags will be reported:
+
 1. **sidekiq.worker_metrics.in_queue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement (**this metric is currently inaccurate**)
 
 ## DogStatsD Keys
+
 For each job, the following metrics and tags will be reported:
 
 1. **sidekiq.schedule (tags: {queue: _queue_, worker: _job_})**: counter incremented each time a
@@ -125,10 +165,12 @@ will have a `.retry` appended:
 2. **sidekiq.dequeue.retry (tags: {queue: _queue_, worker: _job_})**
 
 For each queue, the following metrics and tags will be reported:
+
 1. **sidekiq.queue.size (tags: {queue: _queue_})**: gauge of how many jobs are in the queue
 2. **sidekiq.queue.latency (tags: {queue: _queue_})**: gauge of how long the oldest job has been in the queue
 
 For each worker, the following metrics and tags will be reported:
+
 1. **sidekiq.worker_metrics.in_queue.#{key}**: number of jobs "in queue" per worker, uses redis to track increment/decrement (**this metric is currently inaccurate**)
 
 ## Worker
@@ -159,14 +201,15 @@ You can schedule this however you see fit. A simple way is to use [sidekiq-sched
 
 ## Development
 
+**Note:** Development requires Ruby 2.7.8 or higher. The recommended Ruby version is 3.3.
+
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/enova/sidekiq-instrument.
-
+Bug reports and pull requests are welcome on GitHub at <https://github.com/enova/sidekiq-instrument>.
 
 ## License
 

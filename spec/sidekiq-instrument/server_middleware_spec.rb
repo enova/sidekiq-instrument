@@ -3,6 +3,14 @@
 require 'sidekiq/instrument/middleware/server'
 
 RSpec.describe Sidekiq::Instrument::ServerMiddleware do
+  def set_max_retries(max_retries)
+    if Sidekiq.respond_to?(:default_configuration) # Sidekiq 7.0+
+      Sidekiq.default_configuration[:max_retries] = max_retries
+    else                                           # Sidekiq 6
+      Sidekiq[:max_retries] = max_retries
+    end
+  end
+
   describe '#call' do
     let(:expected_dog_options) { { tags: ['queue:default', 'worker:my_worker'] } }
     let(:expected_error_dog_options) { { tags: ['queue:default', 'worker:my_worker', 'error:RuntimeError'] } }
@@ -29,7 +37,7 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
 
     context 'when an initial job succeeds' do
       before do
-        Sidekiq[:max_retries] = 0
+        set_max_retries(0)
       end
 
       it 'increments StatsD dequeue and success counters' do
@@ -103,7 +111,7 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
 
     context 'when a retried job succeeds' do
       before do
-        Sidekiq[:max_retries] = 1
+        set_max_retries(1)
         allow_any_instance_of(MyWorker).to receive(:perform).and_raise(RuntimeError.new('foo'))
 
         # This makes the job look like a retry since we can't access the job argument
@@ -131,7 +139,7 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
 
     context 'when a job fails' do
       before do
-        Sidekiq[:max_retries] = 0
+        set_max_retries(0)
         allow_any_instance_of(MyWorker).to receive(:perform).and_raise(RuntimeError.new('foo'))
       end
 
@@ -184,7 +192,7 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
       context 'when the worker has retries disabled' do
         shared_examples 'it does not attempt to track retries' do |retry_value|
           before do
-            Sidekiq[:max_retries] = 1
+            set_max_retries(1)
             allow(MyWorker).to receive(:get_sidekiq_options).and_return({ "retry" => retry_value, "queue" => 'default' })
           end
 
@@ -218,7 +226,7 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
       context 'when the current job has retries left to attempt' do
         shared_examples 'it tracks the retries with DogStatsD' do |retry_value|
           before do
-            Sidekiq[:max_retries] = 2
+            set_max_retries(2)
             allow(MyWorker).to receive(:get_sidekiq_options).and_return({ "retry" => retry_value, "queue" => 'default' })
           end
 
@@ -253,7 +261,7 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
 
       context 'when the job is on its last retry attempt' do
         before do
-          Sidekiq[:max_retries] = 1
+          set_max_retries(1)
 
           # This makes the job look like a retry since we can't access the job argument
           allow_any_instance_of(Sidekiq::Instrument::ServerMiddleware).to receive(:current_retries).and_return(1)

@@ -21,7 +21,11 @@ module Sidekiq::Instrument
       retries = fetch_worker_retry(worker)
       case retries.to_s
       when "true", ""
-        Sidekiq[:max_retries]
+        if Sidekiq.respond_to?(:default_configuration) # Sidekiq 7.0+
+          Sidekiq.default_configuration[:max_retries]
+        else                                           # Sidekiq 6
+          Sidekiq[:max_retries]
+        end || Sidekiq::JobRetry::DEFAULT_MAX_RETRY_ATTEMPTS
       when "false"
         0
       else

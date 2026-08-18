@@ -1,7 +1,7 @@
-require "sidekiq/job_retry"
-
 module Sidekiq::Instrument
   module MetricNames
+    DEFAULT_MAX_RETRY_ATTEMPTS = 25 # 25 retries is Sidekiq's default if not otherwise set: https://github.com/sidekiq/sidekiq/wiki/Error-Handling#automatic-job-retry
+
     def metric_name(worker, job, event)
       if worker.respond_to?(:statsd_metric_name)
         worker.send(:statsd_metric_name, event)
@@ -27,7 +27,7 @@ module Sidekiq::Instrument
           Sidekiq.default_configuration[:max_retries]
         else                                           # Sidekiq 6
           Sidekiq[:max_retries]
-        end || Sidekiq::JobRetry::DEFAULT_MAX_RETRY_ATTEMPTS
+        end || DEFAULT_MAX_RETRY_ATTEMPTS
       when "false"
         0
       else

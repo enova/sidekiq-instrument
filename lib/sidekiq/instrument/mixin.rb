@@ -1,3 +1,5 @@
+require "sidekiq/job_retry"
+
 module Sidekiq::Instrument
   module MetricNames
     def metric_name(worker, job, event)

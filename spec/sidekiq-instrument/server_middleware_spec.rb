@@ -167,6 +167,20 @@ RSpec.describe Sidekiq::Instrument::ServerMiddleware do
         end
       end
 
+      context "when max retries is not set" do
+        before do
+          set_max_retries(nil)
+        end
+
+        it 'falls back to the default max retry attempts, and increments the StatsD error counter' do
+          expect do
+            MyWorker.perform_async
+          rescue StandardError
+            nil
+          end.to trigger_statsd_increment('shared.sidekiq.default.MyWorker.error')
+        end
+      end
+
       context 'with additional tag(s)' do
         let(:tag) { 'test_worker' }
         let(:expected_dog_options) { { tags: ['queue:default', 'worker:my_worker', tag] } }

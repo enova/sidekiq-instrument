@@ -8,7 +8,7 @@ module Sidekiq::Instrument
     include Sidekiq::Worker
 
     # These defaults are for compatibility with Resque's stats names
-    # (i.e. the metrics will reported as :processed, :workers, :pending, and :failed).
+    # (i.e. the metrics will be reported as :processed, :workers, :pending, and :failed).
     # Feel free to override.
     METRIC_NAMES = {
       processed: nil,
@@ -46,7 +46,7 @@ module Sidekiq::Instrument
 
     # @param [Sidekiq::Queue] queue used for stats emission
     # @return [Array<String>] an array of tags
-    # @example this method can be override to add more tags
+    # @example this method can be overridden to add more tags
     #   class MyStatsWorker < Sidekiq::Instrument::Worker
     #     private
     #
